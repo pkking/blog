@@ -9,7 +9,7 @@ SITEURL = 'http://pkking.gitcafe.com'
 PATH = 'content'
 TIMEZONE = u'Asia/Shanghai'
 DEFAULT_LANG = u'cn'
-
+OUTPUT_PATH = 'pkking/'
 # Feed generation is usually not desired when developing
 USE_FOLDER_AS_CATEGORY = True 
 FEED_ALL_ATOM = None
@@ -23,11 +23,11 @@ AUTHOR_FEED_RSS = None
 AUTORELOAD_IGNORE_CACHE = True #if in development set to True
 LOAD_CONTENT_CACHE = True      #if in development set to True
 
-# Blogroll
+#  Links
 LINKS = (('GitHub', 'https://github.com/pkking'),)
 
 # Social widget
-SOCIAL = (('Weibo','http://weibo.com/lcrrrr/'),
+SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
           ('twitter', 'http://twitter.com/ametaireau'),)
 
 DEFAULT_PAGINATION = 10
