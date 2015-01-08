@@ -15,13 +15,14 @@ USE_FOLDER_AS_CATEGORY = True
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
 DEFAULT_DATE = 'fs'
+DISPLAY_SEARCH_FORM = True
 OUTPUT_RETENTION = (".git")
 TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
 
-AUTORELOAD_IGNORE_CACHE = True #if in development set to True
-LOAD_CONTENT_CACHE = True      #if in development set to True
+AUTORELOAD_IGNORE_CACHE = False #if in development set to True
+LOAD_CONTENT_CACHE =  False    #if in development set to True
 
 #  Links
 LINKS = (('GitHub', 'https://github.com/pkking'),)

@@ -6,7 +6,7 @@ import SimpleHTTPServer
 import SocketServer
 
 # Local path configuration (can be absolute or relative to fabfile)
-env.deploy_path = 'output'
+env.deploy_path = 'pkking'
 DEPLOY_PATH = env.deploy_path
 
 # Remote server configuration
