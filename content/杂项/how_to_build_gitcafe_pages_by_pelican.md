@@ -1,29 +1,32 @@
-Title:How to use gitcafe build a blog
+Title:利用pelican和gitcafe搭建博客
+Tags:python,pelican,gitcafe,博客
 
-##pelican
-pelican是基于python的静态web站点生成器
+##介绍
+pelican是基于python的静态web站点生成器，由python编写
+目前最火热的静态站点利器jekyll则由ruby编写，处于对python的爱，于是选择用pelican
 
-- 详见[pelican](http://docs.getpelican.com/)，本文基于pelican 3.5.0版本
+- 文档详见[pelican](http://docs.getpelican.com/)，本文基于pelican 3.5.0版本
 - [源码](https://github.com/getpelican/pelican)
 - 特性：
-    - 支持markdown和rst
-    - 支持主题（比起jekyll的ruby，更熟悉python）
+    - 支持markdown，html和rst
+    - 支持各种主题[theme](https://github.com/getpelican/pelican-themes)
     - 支持插件
     - 代码高亮
 
 ##gitcafe pages
-gitcafepages是用于显示html文档的，可以用于托管个人博客，容量不限，并且可以连接自己的域名
+gitcafe pages是类似于github pages的服务，不过国内访问速度更良心
 
 ###WHY gitcafe
-github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别导到github pages和gitcafe pages，具体做法可以参见[该文](https://ruby-china.org/topics/18084)
+github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见[该文](https://ruby-china.org/topics/18084)
 
 ##QuickStart
-1. 在centos 7下，首先安装python，pip，virtualenv（可选）
+1. 在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便）
 
         yum install -y python python-devel python-libs python-pip
+
 1. 随后安装pelican和markdown库，如果需要建立虚拟环境(virtualenv)，则可以参见[该文](https://virtualenv.pypa.io/en/latest)
 
-        pip install pelican markdown
+        pip install pelican markdown 
 
 1. 建立一个存放博客的目录，并进入目录，取名'waaagh'（绿皮万岁)
     
@@ -34,7 +37,7 @@ github大法好，不过国内的访问速度令人蛋碎，当然，如果是�
 `pelican-quickstart`，根据提示，可以快速生成一个静态页面的生产环境，例如:（输入不支持backspace键，不过输入错误可以在随后生成的`pelicanconf.py`文件中修改，直接按回车则是取默认值）
 
 
-        (blog)[root@localhost blog]# pelican-quickstart 
+        (blog)[root@localhost waaagh]# pelican-quickstart 
         Welcome to pelican-quickstart v3.5.0.
         
         This script will help you create a new Pelican-based website.
@@ -47,8 +50,7 @@ github大法好，不过国内的访问速度令人蛋碎，当然，如果是�
         > What will be the title of this web site? waaagh!!!
         > Who will be the author of this web site? lichaoran
         > What will be the default language of this web site? [en] zh
-        > Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) pkking.github.io
-        You must answer 'yes' or 'no'
+        > Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
         > Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
         > What is your URL prefix? (see above example; no trailing slash) pkking
         > Do you want to enable article pagination? (Y/n) y
@@ -85,26 +87,28 @@ github大法好，不过国内的访问速度令人蛋碎，当然，如果是�
 通常，我们将content目录作为存放文章源文件的目录，pelican支持rst，markdown和html文件。
 不管3721，先撸一篇markdown文章吧：
 
-    Title: My super title
-    Date: 2010-12-03 10:20
-    Modified: 2010-12-05 19:30
+    Title: 我的第一发博客
+    Date: 2015-01-01 
     Category: Python
     Tags: pelican, publishing
-    Slug: my-super-post
-    Authors: Alexis Metaireau, Conan Doyle
-    Summary: Short version for index and feeds
+    Slug: 第一篇博客
+    Authors: lichaoran
+    Summary: Hello World
     
     hello world!
 
 接下来，解释一下上面的文件内容：
 
-- 以:隔开的key-value键值对可以成为元素局（metadata），他们构成了一些文章的基础属性，例如日期，标题，摘要等。
-- Title为该文的标题，更多的源数据可以参见[这里](http://docs.getpelican.com/en/3.5.0/content.html#file-metadata)，（根据链接中的配置，我在`pelicanconf.py`中添加了`DEFAULT_DATE = 'fs'`行，使文章自动使用了文件系统的mtime作为时间戳。
+- 以:隔开的key-value键值对可以成为元素局（metadata），他们构成了一些文章的基础属性，例如日期，标题，摘要等，具体的元数据可以参看pelican文档
+- 正文和metadata以空行隔开
 
-写好文章后，将其命名为hello_world.md（.md为markdown源文件的后缀名），然后在project根目录运行`pelican /path/to/your/content/ [-s path/to/your/settings.py]`，其中，`/path/to/your/content`即是存放文章源文件的目录，刚才我们使用了content目录，该目录的名称依然可以在`pelicanconf.py`中配置，甚至，配置文件`pelicanconf.py`都可以用其他配置文件代替，只需要指定 `path/to/your/settings.py`即可。
+写好文章后，将其命名为hello_world.md（.md为markdown源文件的后缀名），然后在project根目录运行`pelican /path/to/your/content/ [-s path/to/your/settings.py]`，其中，`/path/to/your/content`即是存放文章源文件的目录，刚才我们使用了content目录，该目录的名称可以在`pelicanconf.py`中配置，甚至，输出目录`output`都可以用其他配置文件代替，配置文件`pelicanconf.py`也可以是其他的配置文件，只需要指定`path/to/your/settings.py`即可。
 
 **TIPS**:
-同时在`project`目录，命令`make html`也可以直接生成所有的静态页面，不过他会将`output`目录的所有内容先删除，如果没有配置`OUTPUT_RETENTION `，将会删除类似.git一样的版本跟踪文件。因此，可以使用`make regenerate`更新静态页面，同时，可以运行`make serve`来启动一个本地服务器，通过[localhost.com:8000](localhost.com:8000)来访问。命令`make devserver`可以重复上面个两个命令。
+写好文章后，利用刚才的命令，就已经生成好页面到`output`目录了，这时可以利用`make serve`命令启动一个本地服务器，通过访问`localhost.com:8000`来访问生成的页面
+
+##主题
+pelican支持各种主题，[这里](http://pelicanthemes.com/)有各种主题及其下载链接，主题的安装和配置可以使用`pelican-theme`工具，具体方法参见`pelican-theme --help`
 
 ##配置pelican
 配置文件`pelicanconf.py`包括了众多选项，可以参见[该页](http://docs.getpelican.com/en/3.5.0/settings.html)进行配置

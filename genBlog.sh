@@ -1,1 +1,1 @@
-pelican -s pelicanconf.py content -o pkking/
+pelican -s pelicanconf.py -t gum
