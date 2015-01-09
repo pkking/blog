@@ -33,10 +33,13 @@ LOAD_CONTENT_CACHE =  False    #if in development set to True
 
 #  Links
 GITHUB_URL = u'https://github.com/pkking'
+LINKS = (('GitHub', 'https://github.com/pkking'),)
 
 # Social widget
 TWITTER_URL = u'http://twitter.com/ametaireau'
 WEIBO_URL = u'http://weibo.com/lcrrrr'
+SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
+          ('twitter', 'http://twitter.com/ametaireau'),)
 
 DEFAULT_PAGINATION = 10
 
