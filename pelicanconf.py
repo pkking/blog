@@ -6,6 +6,10 @@ AUTHOR = u'lichaoran'
 SITENAME = u'waaagh!!!'
 SITEURL = 'http://pkking.gitcafe.com'
 
+DATE_FORMATS = {
+    'cn': ('zh_CN','%Y-%m-%d(%a)'),
+    'cn': ('chn','%Y-%m-%d(%a)'),
+}
 PATH = 'content'
 TIMEZONE = u'Asia/Shanghai'
 DEFAULT_LANG = u'cn'
