@@ -15,8 +15,10 @@ USE_FOLDER_AS_CATEGORY = True
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
 DEFAULT_DATE = 'fs'
+PAGE_PATHS = ['pages']
+DISPLAY_PAGES_ON_MENU = True
 DISPLAY_SEARCH_FORM = True
-OUTPUT_RETENTION = (".git")
+OUTPUT_RETENTION = (".git/")
 TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
@@ -36,10 +38,10 @@ GITHUB_URL = u'https://github.com/pkking'
 LINKS = (('GitHub', 'https://github.com/pkking'),)
 
 # Social widget
-TWITTER_URL = u'http://twitter.com/ametaireau'
+TWITTER_URL = u'https://twitter.com/li_chaoran'
 WEIBO_URL = u'http://weibo.com/lcrrrr'
 SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
-          ('twitter', 'http://twitter.com/ametaireau'),)
+        ('twitter', 'https://twitter.com/li_chaoran'),)
 
 DEFAULT_PAGINATION = 10
 
