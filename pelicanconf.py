@@ -32,11 +32,11 @@ AUTORELOAD_IGNORE_CACHE = False #if in development set to True
 LOAD_CONTENT_CACHE =  False    #if in development set to True
 
 #  Links
-LINKS = (('GitHub', 'https://github.com/pkking'),)
+GITHUB_URL = u'https://github.com/pkking'
 
 # Social widget
-SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
-          ('twitter', 'http://twitter.com/ametaireau'),)
+TWITTER_URL = u'http://twitter.com/ametaireau'
+WEIBO_URL = u'http://weibo.com/lcrrrr'
 
 DEFAULT_PAGINATION = 10
 

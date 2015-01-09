@@ -1,1 +1,1 @@
-pelican -s pelicanconf.py -t gum
+pelican -s pelicanconf.py
