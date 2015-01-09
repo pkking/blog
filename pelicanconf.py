@@ -10,7 +10,7 @@ PATH = 'content'
 TIMEZONE = u'Asia/Shanghai'
 DEFAULT_LANG = u'cn'
 OUTPUT_PATH = 'pkking/'
-# Feed generation is usually not desired when developing
+#enable search
 USE_FOLDER_AS_CATEGORY = True 
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
@@ -21,6 +21,13 @@ TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
 
+# Theme
+THEME = u'waaagh'
+
+# DUOSHUO comment plugin
+DUOSHUO_SITENAME = u'waaagh'
+
+# Cache
 AUTORELOAD_IGNORE_CACHE = False #if in development set to True
 LOAD_CONTENT_CACHE =  False    #if in development set to True
 
