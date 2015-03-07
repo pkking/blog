@@ -1,18 +1,21 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
 AUTHOR = u'lichaoran'
 SITENAME = u'waaagh!!!'
-SITEURL = 'http://pkking.gitcafe.com'
+SITEURL = 'http://pkking.gitcafe.io'
 
 DATE_FORMATS = {
     'cn': ('zh_CN','%Y-%m-%d(%a)'),
 }
+
 PATH = 'content'
-TIMEZONE = u'Asia/Shanghai'
-DEFAULT_LANG = u'cn'
+TIMEZONE = 'Asia/Shanghai'
+DEFAULT_LANG = 'cn'
 OUTPUT_PATH = 'pkking/'
+ARTICLE_URL = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/'
+ARTICLE_SAVE_AS = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/index.html'
 #enable search
 USE_FOLDER_AS_CATEGORY = True 
 FEED_ALL_ATOM = None
@@ -27,13 +30,13 @@ AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
 
 # Theme
-THEME = u'waaagh'
+THEME = 'waaagh'
 
 # DUOSHUO comment plugin
 DUOSHUO_SITENAME = u'waaagh'
 
 # Cache
-AUTORELOAD_IGNORE_CACHE = False #if in development set to True
+AUTORELOAD_IGNORE_CACHE = True #if in development set to True
 LOAD_CONTENT_CACHE =  False    #if in development set to True
 
 #  Links
@@ -49,4 +52,4 @@ SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
 DEFAULT_PAGINATION = 10
 
 # Uncomment following line if you want document-relative URLs when developing
-#RELATIVE_URLS = True
+RELATIVE_URLS = True

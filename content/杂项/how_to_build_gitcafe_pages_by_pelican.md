@@ -1,9 +1,10 @@
 Title:利用pelican和gitcafe搭建博客
 Tags:python,pelican,gitcafe,博客
+Date: 2015-02-18 19:30
 
 ##介绍
 pelican是基于python的静态web站点生成器，由python编写
-目前最火热的静态站点利器jekyll则由ruby编写，处于对python的爱，于是选择用pelican
+目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican
 
 - 文档详见[pelican](http://docs.getpelican.com/)，本文基于pelican 3.5.0版本
 - [源码](https://github.com/getpelican/pelican)
@@ -36,40 +37,40 @@ github大法好，不过国内的访问速度令人蛋碎，当然，如果是�
 1. QuickStart，运行：
 `pelican-quickstart`，根据提示，可以快速生成一个静态页面的生产环境，例如:（输入不支持backspace键，不过输入错误可以在随后生成的`pelicanconf.py`文件中修改，直接按回车则是取默认值）
 
-
-        (blog)[root@localhost waaagh]# pelican-quickstart 
-        Welcome to pelican-quickstart v3.5.0.
+```shell
+(blog)[root@localhost waaagh]# pelican-quickstart 
+Welcome to pelican-quickstart v3.5.0.
         
-        This script will help you create a new Pelican-based website.
+This script will help you create a new Pelican-based website.
         
-        Please answer the following questions so this script can generate the files
-        needed by Pelican.
+Please answer the following questions so this script can generate the files
+needed by Pelican.
         
             
-        > Where do you want to create your new web site? [.] .
-        > What will be the title of this web site? waaagh!!!
-        > Who will be the author of this web site? lichaoran
-        > What will be the default language of this web site? [en] zh
-        > Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
-        > Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
-        > What is your URL prefix? (see above example; no trailing slash) pkking
-        > Do you want to enable article pagination? (Y/n) y
-          How many articles per page do you want? [10] 
-        ▽ Do you want to generate a Fabfile/Makefile to automate generation and publishing? (Y/n) y
-        > Do you want an auto-reload & simpleHTTP script to assist with theme and site development? (Y/n) y
-        > Do you want to upload your website using FTP? (y/N) n
-        > Do you want to upload your website using SSH? (y/N) y
-        > What is the hostname of your SSH server? [localhost] 
-        > What is the port of your SSH server? [22] 
-        > What is your username on that server? [root] pkking
-        > Where do you want to put your web site on that server? [/var/www] 
-        > Do you want to upload your website using Dropbox? (y/N) n
-        > Do you want to upload your website using S3? (y/N) n
-        > Do you want to upload your website using Rackspace Cloud Files? (y/N) n
-        > Do you want to upload your website using GitHub Pages? (y/N) y
-        > Is this your personal page (username.github.io)? (y/N) 
-        Done. Your new project is available at /root/blog/blog
-    
+> Where do you want to create your new web site? [.] .
+> What will be the title of this web site? waaagh!!!
+> Who will be the author of this web site? lichaoran
+> What will be the default language of this web site? [en] zh
+> Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
+> Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) yes
+> What is your URL prefix? (see above example; no trailing slash) pkking
+> Do you want to enable article pagination? (Y/n) y
+  How many articles per page do you want? [10] 
+▽ Do you want to generate a Fabfile/Makefile to automate generation and publishing? (Y/n) y
+> Do you want an auto-reload & simpleHTTP script to assist with theme and site development? (Y/n) y
+> Do you want to upload your website using FTP? (y/N) n
+> Do you want to upload your website using SSH? (y/N) y
+> What is the hostname of your SSH server? [localhost] 
+> What is the port of your SSH server? [22] 
+> What is your username on that server? [root] pkking
+> Where do you want to put your web site on that server? [/var/www] 
+> Do you want to upload your website using Dropbox? (y/N) n
+> Do you want to upload your website using S3? (y/N) n
+> Do you want to upload your website using Rackspace Cloud Files? (y/N) n
+> Do you want to upload your website using GitHub Pages? (y/N) y
+> Is this your personal page (username.github.io)? (y/N) 
+  Done. Your new project is available at /root/blog/blog
+``` 
 
 完成后，目录结构如下：
     
