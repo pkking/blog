@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 AUTHOR = u'lichaoran'
-SITENAME = u'waaagh!!!'
+SITENAME = u'WAAAGH!'
 SITEURL = 'http://pkking.gitcafe.io'
 
 DATE_FORMATS = {
@@ -24,7 +24,8 @@ DEFAULT_DATE = 'fs'
 PAGE_PATHS = ['pages']
 DISPLAY_PAGES_ON_MENU = True
 DISPLAY_SEARCH_FORM = True
-OUTPUT_RETENTION = (".git/")
+DELETE_OUTPUT_DIRECTORY = True
+OUTPUT_RETENTION = [".git"]
 TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
