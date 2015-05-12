@@ -5,11 +5,7 @@ from __future__ import unicode_literals
 AUTHOR = u'lichaoran'
 SITENAME = u'WAAAGH!'
 SITEURL = 'http://pkking.gitcafe.io'
-
-DATE_FORMATS = {
-    'cn': ('zh_CN','%Y-%m-%d(%a)'),
-}
-
+DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 PATH = 'content'
 TIMEZONE = 'Asia/Shanghai'
 DEFAULT_LANG = 'cn'
@@ -50,7 +46,10 @@ WEIBO_URL = u'http://weibo.com/lcrrrr'
 SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
         ('twitter', 'https://twitter.com/li_chaoran'),)
 
-DEFAULT_PAGINATION = 10
+DEFAULT_PAGINATION = 5
+
+TAG_CLOUD_STEPS = 4
+TAG_CLOUD_MAX_ITEMS = 200
 
 # Uncomment following line if you want document-relative URLs when developing
 RELATIVE_URLS = True

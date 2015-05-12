@@ -1,6 +1,7 @@
 Title: 关于自己
+Date: 2015-02-9 19:30
 
-a code of Waaagh!
+a code of WAAAGH!
 
 ---
 
@@ -13,4 +14,4 @@ a code of Waaagh!
 
 **email**: 409624189@qq.com 
 <br>
-**SteamID**: waaagh!!!
+**SteamID**: WAAAGH!!!

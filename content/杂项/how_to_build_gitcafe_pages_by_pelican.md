@@ -88,6 +88,7 @@ needed by Pelican.
 通常，我们将content目录作为存放文章源文件的目录，pelican支持rst，markdown和html文件。
 不管3721，先撸一篇markdown文章吧：
 
+```markdown
     Title: 我的第一发博客
     Date: 2015-01-01 
     Category: Python
@@ -97,6 +98,7 @@ needed by Pelican.
     Summary: Hello World
     
     hello world!
+```
 
 接下来，解释一下上面的文件内容：
 
@@ -120,12 +122,13 @@ pelican支持各种主题，[这里](http://pelicanthemes.com/)有各种主题�
 1. 在gitcafe.com中建立一个和用户名相同的repo
 1. 根据刚建立的空repo首页，将git username和email配置为相应的数据（在github中，非验证邮箱和用户名会导致pages build failure，不知道gitcafe是否有一样的机制）
 1. 在`output`目录，依次运行
-    
-        git init #初始化仓库
-        git checkout -b gitcafe-pages #建立制定分支，pages只会渲染该分支中的页面
-        git add -A #添加修改
-        git commit -m"init the blog" #提交
-        git remote add gitcafe git@gitcafe.com:pkking/pkking.git #pkking替换为你的gitcafe用户名
-        git push gitcafe gitcafe-pages #将提交push到gitcafe
-    
+
+```shell
+    git init #初始化仓库
+    git checkout -b gitcafe-pages #建立制定分支，pages只会渲染该分支中的页面
+    git add -A #添加修改
+    git commit -m"init the blog" #提交
+    git remote add gitcafe git@gitcafe.com:pkking/pkking.git #pkking替换为你的gitcafe用户名
+    git push gitcafe gitcafe-pages #将提交push到gitcafe
+```
 1. OK，一切就绪，访问pkking.gitcafe.io查看渲染好的页面吧
