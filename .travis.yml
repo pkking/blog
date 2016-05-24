@@ -8,6 +8,7 @@ install:
 script:
 - make publish github
 after_success:
+- cp ./waaagh.jpeg pkking/theme/img/profile.png
 - bash deploy.sh
 env:
   global:
