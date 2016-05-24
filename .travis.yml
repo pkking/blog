@@ -4,6 +4,7 @@ branches:
   - master
 install:
 - pip install -r requirements.txt
+- pelican-themes -i Flex/
 script:
 - make publish github
 env:
