@@ -4,11 +4,11 @@ from __future__ import unicode_literals
 
 AUTHOR = u'lichaoran'
 SITENAME = u'WAAAGH!'
-SITEURL = 'http://pkking.gitcafe.io'
+SITEURL = 'http://pkking.github.io'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
-PATH = 'content'
+PATH = 'content/'
 TIMEZONE = 'Asia/Shanghai'
-DEFAULT_LANG = 'cn'
+#DEFAULT_LANG = 'cn'
 OUTPUT_PATH = 'pkking/'
 ARTICLE_URL = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/'
 ARTICLE_SAVE_AS = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/index.html'
@@ -27,13 +27,14 @@ AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
 
 # Theme
-THEME = 'waaagh'
+THEME = 'Flex'
 
 # DUOSHUO comment plugin
-DUOSHUO_SITENAME = u'waaagh'
+#DUOSHUO_SITENAME = u'waaagh'
+DISQUS_SITENAME = 'lcrpkking'
 
 # Cache
-AUTORELOAD_IGNORE_CACHE = True #if in development set to True
+AUTORELOAD_IGNORE_CACHE = False #if in development set to True
 LOAD_CONTENT_CACHE =  False    #if in development set to True
 
 #  Links
