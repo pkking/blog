@@ -1,7 +1,6 @@
 output/
-*.pyc
-*.pyo
-cache/
 __pycache__
+cache/
 .gitignore
 pkking/
+.env
