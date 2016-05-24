@@ -2,10 +2,10 @@ language: python
 branches:
   only:
   - master
-  install:
-  - pip install -r requirements.txt
-  script:
-  - make publish github
+install:
+- pip install -r requirements.txt
+script:
+- make publish github
 env:
   global:
     secure: X0lPMWB7uHVnx67f60jhCX5SqFm+bDFbzfmspAPmuQHpDl9U8HZB77NKkxwbVJtjFjnh/KsmjxYm9KqKSdP+Teu6+wjWeYYO1cnblsCJz6WxFCxiF89VPCnqvqboTG+c6nXckirRmaz/C28VURXd1/BYtgqdxvozsj/I2lx/1lCD7mLMHRV2uC3t8OUWLok9JcicMmEnzFqJQyrQhCS0tAFp9gvkIVAWaUIAskXRyrHCTk6/+AgWyUq2HSbyRxKzqeL/3KtupkLnZpB4t7QW2EV9jmNoCWPKoJxFbrcUz3fT9S13oUKr+vNwhfThiiJZtg1MdfQxu8VJV6sY49sjGMdOFaWE0tGYXObqaZQlExPzehPpvU3mNlOpblERLr8ID8oqrVzR2Wxu6GKl4xbbFQIGlwhgStuS/9WYYFLTxpsGnJTYooLHCA1W4mIdAuzq2mlJFp0r8ShAPokiyYIfAsGvo+ImOUH7sjqbBb9WapY2qtJIephHhE1FJQPkYIve3Cxw3OUjgIoTRLFlxmQrK3BolFTvZ1l141wL7ogR2kKXGkS25U+j6MowUMU1u5l69i7L4TkbJYRpzkhqh3hgGsX2hZATPkxQWLe7HYsmCqbHRmDakbx+BS0gVqB8lAqOZdb2gIW590yIp0FFKMJP37HRVyV3O6zYAPHqqRctU14=
