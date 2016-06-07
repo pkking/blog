@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 AUTHOR = u'lichaoran'
 SITENAME = u'WAAAGH!'
-SITEURL = 'http://pkking.github.io'
+SITEURL = 'https://pkking.github.io'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 PATH = 'content/'
 TIMEZONE = 'Asia/Shanghai'
@@ -27,7 +27,7 @@ AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
 
 # Theme
-THEME = 'Flex'
+THEME = 'themes/Flex'
 
 # DUOSHUO comment plugin
 #DUOSHUO_SITENAME = u'waaagh'
@@ -42,8 +42,8 @@ GITHUB_URL = u'https://github.com/pkking'
 LINKS = (('GitHub', 'https://github.com/pkking'),)
 
 # Social widget
-TWITTER_URL = u'https://twitter.com/li_chaoran'
-WEIBO_URL = u'http://weibo.com/lcrrrr'
+#TWITTER_URL = u'https://twitter.com/li_chaoran'
+#WEIBO_URL = u'http://weibo.com/lcrrrr'
 SOCIAL = (('weibo','http://weibo.com/lcrrrr/'),
         ('twitter', 'https://twitter.com/li_chaoran'),)
 

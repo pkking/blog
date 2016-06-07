@@ -4,7 +4,6 @@ branches:
   - master
 install:
 - pip install -r requirements.txt
-- pelican-themes -i themes/Flex/
 script:
 - make publish github
 after_success:
