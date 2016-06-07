@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://pkking.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="WAAAGH! Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="" />
+
+
+    <meta name="author" content="lichaoran" />
+    <meta name="description" content="" />
+<meta property="og:site_name" content="WAAAGH!"/>
+<meta property="og:type" content="blog"/>
+<meta property="og:title" content="WAAAGH!"/>
+<meta property="og:description" content=""/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://pkking.github.com"/>
+
+  <title>WAAAGH!</title>
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://pkking.github.com">
+        <img src="http://pkking.github.com/theme/img/profile.png" alt="" title="">
+      </a>
+      <h1><a href="http://pkking.github.com"></a></h1>
+      <nav>
+        <ul class="list">
+          <li><a href="http://pkking.github.com/pages/guan-yu-zi-ji.html#guan-yu-zi-ji">关于自己</a></li>
+          <li><a href="https://github.com/pkking" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+      <ul class="social">
+        <li><a class="sc-weibo" href="http://weibo.com/lcrrrr/" target="_blank"><i class="fa fa-weibo"></i></a></li>
+        <li><a class="sc-twitter" href="https://twitter.com/li_chaoran" target="_blank"><i class="fa fa-twitter"></i></a></li>
+      </ul>
+    </div>
+  </aside>
+  <main>
+
+<article>
+  <header>
+    <h2><a href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti">关于在amd64架构下构建arm架构deb包的问题</a></h2>
+    <p>
+      Posted on 2015-05-12 in <a href="http://pkking.github.com/category/linux.html">Linux</a>
+      &#8226; Tagged with
+      <a href="http://pkking.github.com/tag/ubuntu.html">ubuntu</a>,      <a href="http://pkking.github.com/tag/sbuild.html">sbuild</a>,      <a href="http://pkking.github.com/tag/arm.html">arm</a>,      <a href="http://pkking.github.com/tag/crossbuild.html">crossBuild</a>      &#8226; <a href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#disqus_thread">Leave a comment</a>
+    </p>
+  </header>
+  <div>
+      <h1>poky &amp; yocto</h1>
+<p>最近项目组在准备开发基于 <code>arm</code>的版本，于是涉及到了交叉编译和交叉构建，前者很简单，只需要安装相应的arm-gcc即可。
+可惜生活往往不是如此简单，出于某些目的，我们需要构建基于ubuntu 中的源码和包管理机制构建的版本，也就是说，我们需要制作arm版本的ubuntu rootfs，之所以不能直接使用<code>ubuntu core for arm</code>，是因为某些时候可能需要修改某些包的源码，所以需要同时搭建一个交叉编译和构建包的环境。</p>
+<p>也就是一个 <code>src -&gt; binary -&gt; package</code>的过程</p>
+<h3>Yocto</h3>
+<p>记得在实验室的时候，用<code>bitbake</code>这个工具编译过arm下的用户态程序，于是google一番发现，bitbake原来是一个叫做Yocto的工具下的一个python写的工具集，用于将源码交叉构建为目标硬件的二进制程序（甚至软件包），遂大喜，下了最新的yocto之后，根据官方的 Quick Start迅速构建了一个img</p>
+<p>不过转念一想，既然要基于ubuntu的源码，那么yocto中所带的源码则显然无法使用了，因为yocto虽然也能制作deb包，不过和ubuntu中的版本完全无法兼容，并且ubuntu对上游源码所打的一些补丁yocto也没有集成，因此可能需要对yocto进行一番改造。</p>
+<h3>放弃</h3>
+<p>参考了yocto的文档后 ...</p>
+      <a class="btn" href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti">Continue reading</a>
+  </div>
+  <hr />
+</article>
+<article>
+  <header>
+    <h2><a href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#yoctoyuan-ma-fen-xi">Yocto源码分析</a></h2>
+    <p>
+      Posted on 2015-03-11 in <a href="http://pkking.github.com/category/yocto.html">yocto</a>
+      &#8226; Tagged with
+      <a href="http://pkking.github.com/tag/python.html">python</a>,      <a href="http://pkking.github.com/tag/yocto.html">Yocto</a>      &#8226; <a href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#disqus_thread">Leave a comment</a>
+    </p>
+  </header>
+  <div>
+      <h2>server如何运作</h2>
+<p>在<code>bb/server/process.py</code>中，定义了当Yocto采用多进程<code>B/S</code>架构时，<code>server</code>进程的启动方式：</p>
+<ul>
+<li><code>start_server()</code>，在<code>bin/bitbake</code>中，包含了一个<code>start_server()</code>函数，该函数根据命令行参数，实例化相应的<code>server</code>对象，并且调用<code>server</code>的<code>detach</code>函数，这个函数则调用了<code>server</code>对象的<code>start()</code>函数</li>
+<li><code>run()</code>:在<code>bb.server.ProcessServer</code>类中，存在一个<code>run</code>函数，该函数设置了一些UI事件，并且调用了<code>bb.cooker.server_main()</code>，该函数接受两个参数 ...</li></ul>
+      <a class="btn" href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#yoctoyuan-ma-fen-xi">Continue reading</a>
+  </div>
+  <hr />
+</article>
+<article>
+  <header>
+    <h2><a href="http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/#li-yong-pelicanhe-gitcafeda-jian-bo-ke">利用pelican和gitcafe搭建博客</a></h2>
+    <p>
+      Posted on 2015-02-18 in <a href="http://pkking.github.com/category/za-xiang.html">杂项</a>
+      &#8226; Tagged with
+      <a href="http://pkking.github.com/tag/python.html">python</a>,      <a href="http://pkking.github.com/tag/pelican.html">pelican</a>,      <a href="http://pkking.github.com/tag/gitcafe.html">gitcafe</a>,      <a href="http://pkking.github.com/tag/bo-ke.html">博客</a>      &#8226; <a href="http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/#disqus_thread">Leave a comment</a>
+    </p>
+  </header>
+  <div>
+      <h2>介绍</h2>
+<p>pelican是基于python的静态web站点生成器，由python编写
+目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican</p>
+<ul>
+<li>文档详见<a href="http://docs.getpelican.com/">pelican</a>，本文基于pelican 3.5.0版本</li>
+<li><a href="https://github.com/getpelican/pelican">源码</a></li>
+<li>特性：<ul>
+<li>支持markdown，html和rst</li>
+<li>支持各种主题<a href="https://github.com/getpelican/pelican-themes">theme</a></li>
+<li>支持插件</li>
+<li>代码高亮</li>
+</ul>
+</li>
+</ul>
+<h2>gitcafe pages</h2>
+<p>gitcafe pages是类似于github pages的服务，不过国内访问速度更良心</p>
+<h3>WHY gitcafe</h3>
+<p>github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见<a href="https://ruby-china.org/topics/18084">该文</a></p>
+<h2>QuickStart</h2>
+<ol>
+<li>
+<p>在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便 ...</p></li></ol>
+      <a class="btn" href="http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/#li-yong-pelicanhe-gitcafeda-jian-bo-ke">Continue reading</a>
+  </div>
+</article>
+
+  <div class="pagination">
+  </div>
+
+    <footer>
+        <p>&copy; lichaoran </p>
+<p>Built using <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a></p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " WAAAGH! ",
+  "url" : "http://pkking.github.com",
+  "image": "",
+  "description": ""
+}
+</script><script type="text/javascript">
+    var disqus_shortname = 'lcrpkking';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+</html>

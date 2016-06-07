@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://pkking.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="WAAAGH! Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="" />
+
+
+    <meta name="author" content="lichaoran" />
+    <meta name="description" content="" />
+<meta property="og:site_name" content="WAAAGH!"/>
+<meta property="og:type" content="blog"/>
+<meta property="og:title" content="WAAAGH!"/>
+<meta property="og:description" content=""/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://pkking.github.com"/>
+
+  <title>WAAAGH! &ndash; Tag: sbuild</title>
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://pkking.github.com">
+        <img src="http://pkking.github.com/theme/img/profile.png" alt="" title="">
+      </a>
+      <h1><a href="http://pkking.github.com"></a></h1>
+      <nav>
+        <ul class="list">
+          <li><a href="http://pkking.github.com/pages/guan-yu-zi-ji.html#guan-yu-zi-ji">关于自己</a></li>
+          <li><a href="https://github.com/pkking" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+      <ul class="social">
+        <li><a class="sc-weibo" href="http://weibo.com/lcrrrr/" target="_blank"><i class="fa fa-weibo"></i></a></li>
+        <li><a class="sc-twitter" href="https://twitter.com/li_chaoran" target="_blank"><i class="fa fa-twitter"></i></a></li>
+      </ul>
+    </div>
+  </aside>
+  <main>
+
+<article>
+  <header>
+    <h2><a href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti">关于在amd64架构下构建arm架构deb包的问题</a></h2>
+    <p>
+      Posted on 2015-05-12 in <a href="http://pkking.github.com/category/linux.html">Linux</a>
+      &#8226; Tagged with
+      <a href="http://pkking.github.com/tag/ubuntu.html">ubuntu</a>,      <a href="http://pkking.github.com/tag/sbuild.html">sbuild</a>,      <a href="http://pkking.github.com/tag/arm.html">arm</a>,      <a href="http://pkking.github.com/tag/crossbuild.html">crossBuild</a>      &#8226; <a href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#disqus_thread">Leave a comment</a>
+    </p>
+  </header>
+  <div>
+      <h1>poky &amp; yocto</h1>
+<p>最近项目组在准备开发基于 <code>arm</code>的版本，于是涉及到了交叉编译和交叉构建，前者很简单，只需要安装相应的arm-gcc即可。
+可惜生活往往不是如此简单，出于某些目的，我们需要构建基于ubuntu 中的源码和包管理机制构建的版本，也就是说，我们需要制作arm版本的ubuntu rootfs，之所以不能直接使用<code>ubuntu core for arm</code>，是因为某些时候可能需要修改某些包的源码，所以需要同时搭建一个交叉编译和构建包的环境。</p>
+<p>也就是一个 <code>src -&gt; binary -&gt; package</code>的过程</p>
+<h3>Yocto</h3>
+<p>记得在实验室的时候，用<code>bitbake</code>这个工具编译过arm下的用户态程序，于是google一番发现，bitbake原来是一个叫做Yocto的工具下的一个python写的工具集，用于将源码交叉构建为目标硬件的二进制程序（甚至软件包），遂大喜，下了最新的yocto之后，根据官方的 Quick Start迅速构建了一个img</p>
+<p>不过转念一想，既然要基于ubuntu的源码，那么yocto中所带的源码则显然无法使用了，因为yocto虽然也能制作deb包，不过和ubuntu中的版本完全无法兼容，并且ubuntu对上游源码所打的一些补丁yocto也没有集成，因此可能需要对yocto进行一番改造。</p>
+<h3>放弃</h3>
+<p>参考了yocto的文档后 ...</p>
+      <a class="btn" href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/#guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti">Continue reading</a>
+  </div>
+</article>
+
+  <div class="pagination">
+  </div>
+
+    <footer>
+        <p>&copy; lichaoran </p>
+<p>Built using <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a></p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " WAAAGH! ",
+  "url" : "http://pkking.github.com",
+  "image": "",
+  "description": ""
+}
+</script><script type="text/javascript">
+    var disqus_shortname = 'lcrpkking';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+</html>

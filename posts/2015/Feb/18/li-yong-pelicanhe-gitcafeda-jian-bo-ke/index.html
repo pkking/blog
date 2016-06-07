@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://pkking.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="WAAAGH! Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="" />
+
+
+<meta name="author" content="lichaoran" />
+<meta name="description" content="介绍 pelican是基于python的静态web站点生成器，由python编写 目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican 文档详见pelican，本文基于pelican 3.5.0版本 源码 特性： 支持markdown，html和rst 支持各种主题theme 支持插件 代码高亮 gitcafe pages gitcafe pages是类似于github pages的服务，不过国内访问速度更良心 WHY gitcafe github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见该文 QuickStart 在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便 ..." />
+<meta name="keywords" content="python, pelican, gitcafe, 博客">
+<meta property="og:site_name" content="WAAAGH!"/>
+<meta property="og:title" content="利用pelican和gitcafe搭建博客"/>
+<meta property="og:description" content="介绍 pelican是基于python的静态web站点生成器，由python编写 目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican 文档详见pelican，本文基于pelican 3.5.0版本 源码 特性： 支持markdown，html和rst 支持各种主题theme 支持插件 代码高亮 gitcafe pages gitcafe pages是类似于github pages的服务，不过国内访问速度更良心 WHY gitcafe github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见该文 QuickStart 在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便 ..."/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2015-02-18 19:30:00+08:00"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="http://pkking.github.com/author/lichaoran.html">
+<meta property="article:section" content="杂项"/>
+<meta property="article:tag" content="python"/>
+<meta property="article:tag" content="pelican"/>
+<meta property="article:tag" content="gitcafe"/>
+<meta property="article:tag" content="博客"/>
+<meta property="og:image" content="">
+  <title>WAAAGH! &ndash; 利用pelican和gitcafe搭建博客</title>
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://pkking.github.com">
+        <img src="http://pkking.github.com/theme/img/profile.png" alt="" title="">
+      </a>
+      <h1><a href="http://pkking.github.com"></a></h1>
+      <nav>
+        <ul class="list">
+          <li><a href="http://pkking.github.com/pages/guan-yu-zi-ji.html#guan-yu-zi-ji">关于自己</a></li>
+          <li><a href="https://github.com/pkking" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+      <ul class="social">
+        <li><a class="sc-weibo" href="http://weibo.com/lcrrrr/" target="_blank"><i class="fa fa-weibo"></i></a></li>
+        <li><a class="sc-twitter" href="https://twitter.com/li_chaoran" target="_blank"><i class="fa fa-twitter"></i></a></li>
+      </ul>
+    </div>
+  </aside>
+  <main>
+
+<article>
+  <header>
+    <h1 id="li-yong-pelicanhe-gitcafeda-jian-bo-ke">利用pelican和gitcafe搭建博客</h1>
+    <p>Posted on 2015-02-18 in <a href="http://pkking.github.com/category/za-xiang.html">杂项</a></p>
+  </header>
+  <div>
+    <h2>介绍</h2>
+<p>pelican是基于python的静态web站点生成器，由python编写
+目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican</p>
+<ul>
+<li>文档详见<a href="http://docs.getpelican.com/">pelican</a>，本文基于pelican 3.5.0版本</li>
+<li><a href="https://github.com/getpelican/pelican">源码</a></li>
+<li>特性：<ul>
+<li>支持markdown，html和rst</li>
+<li>支持各种主题<a href="https://github.com/getpelican/pelican-themes">theme</a></li>
+<li>支持插件</li>
+<li>代码高亮</li>
+</ul>
+</li>
+</ul>
+<h2>gitcafe pages</h2>
+<p>gitcafe pages是类似于github pages的服务，不过国内访问速度更良心</p>
+<h3>WHY gitcafe</h3>
+<p>github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见<a href="https://ruby-china.org/topics/18084">该文</a></p>
+<h2>QuickStart</h2>
+<ol>
+<li>
+<p>在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便）</p>
+<div class="highlight"><pre><span></span>yum install -y python python-devel python-libs python-pip
+</pre></div>
+
+
+</li>
+<li>
+<p>随后安装pelican和markdown库，如果需要建立虚拟环境(virtualenv)，则可以参见<a href="https://virtualenv.pypa.io/en/latest">该文</a></p>
+<div class="highlight"><pre><span></span>pip install pelican markdown
+</pre></div>
+
+
+</li>
+<li>
+<p>建立一个存放博客的目录，并进入目录，取名'waaagh'（绿皮万岁)</p>
+<div class="highlight"><pre><span></span>mkdir -p waaagh
+cd waaagh
+</pre></div>
+
+
+</li>
+<li>
+<p>QuickStart，运行：
+<code>pelican-quickstart</code>，根据提示，可以快速生成一个静态页面的生产环境，例如:（输入不支持backspace键，不过输入错误可以在随后生成的<code>pelicanconf.py</code>文件中修改，直接按回车则是取默认值）</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="o">(</span>blog<span class="o">)[</span>root@localhost waaagh<span class="o">]</span><span class="c1"># pelican-quickstart </span>
+Welcome to pelican-quickstart v3.5.0.
+
+This script will <span class="nb">help</span> you create a new Pelican-based website.
+
+Please answer the following questions so this script can generate the files
+needed by Pelican.
+
+
+&gt; Where <span class="k">do</span> you want to create your new web site? <span class="o">[</span>.<span class="o">]</span> .
+&gt; What will be the title of this web site? waaagh!!!
+&gt; Who will be the author of this web site? lichaoran
+&gt; What will be the default language of this web site? <span class="o">[</span>en<span class="o">]</span> zh
+&gt; Do you want to specify a URL prefix? e.g., http://example.com   <span class="o">(</span>Y/n<span class="o">)</span> yes
+&gt; Do you want to specify a URL prefix? e.g., http://example.com   <span class="o">(</span>Y/n<span class="o">)</span> yes
+&gt; What is your URL prefix? <span class="o">(</span>see above example<span class="p">;</span> no trailing slash<span class="o">)</span> pkking
+&gt; Do you want to <span class="nb">enable</span> article pagination? <span class="o">(</span>Y/n<span class="o">)</span> y
+  How many articles per page <span class="k">do</span> you want? <span class="o">[</span>10<span class="o">]</span> 
+▽ Do you want to generate a Fabfile/Makefile to automate generation and publishing? <span class="o">(</span>Y/n<span class="o">)</span> y
+&gt; Do you want an auto-reload <span class="p">&amp;</span> simpleHTTP script to assist with theme and site development? <span class="o">(</span>Y/n<span class="o">)</span> y
+&gt; Do you want to upload your website using FTP? <span class="o">(</span>y/N<span class="o">)</span> n
+&gt; Do you want to upload your website using SSH? <span class="o">(</span>y/N<span class="o">)</span> y
+&gt; What is the hostname of your SSH server? <span class="o">[</span>localhost<span class="o">]</span> 
+&gt; What is the port of your SSH server? <span class="o">[</span>22<span class="o">]</span> 
+&gt; What is your username on that server? <span class="o">[</span>root<span class="o">]</span> pkking
+&gt; Where <span class="k">do</span> you want to put your web site on that server? <span class="o">[</span>/var/www<span class="o">]</span> 
+&gt; Do you want to upload your website using Dropbox? <span class="o">(</span>y/N<span class="o">)</span> n
+&gt; Do you want to upload your website using S3? <span class="o">(</span>y/N<span class="o">)</span> n
+&gt; Do you want to upload your website using Rackspace Cloud Files? <span class="o">(</span>y/N<span class="o">)</span> n
+&gt; Do you want to upload your website using GitHub Pages? <span class="o">(</span>y/N<span class="o">)</span> y
+&gt; Is this your personal page <span class="o">(</span>username.github.io<span class="o">)</span>? <span class="o">(</span>y/N<span class="o">)</span> 
+  Done. Your new project is available at /root/blog/blog
+</pre></div>
+
+
+<p>完成后，目录结构如下：</p>
+<div class="highlight"><pre><span></span> yourproject/
+├── content
+│   └── (pages)
+├── output
+├── develop_server.sh
+├── fabfile.py
+├── Makefile
+├── pelicanconf.py       # Main settings file
+└── publishconf.py       # Settings to use when ready to publish
+</pre></div>
+
+
+<h2>push一篇博文</h2>
+<p>通常，我们将content目录作为存放文章源文件的目录，pelican支持rst，markdown和html文件。
+不管3721，先撸一篇markdown文章吧：</p>
+<div class="highlight"><pre><span></span>    Title: 我的第一发博客
+    Date: 2015-01-01 
+    Category: Python
+    Tags: pelican, publishing
+    Slug: 第一篇博客
+    Authors: lichaoran
+    Summary: Hello World
+
+    hello world!
+</pre></div>
+
+
+<p>接下来，解释一下上面的文件内容：</p>
+<ul>
+<li>以:隔开的key-value键值对可以成为元素局（metadata），他们构成了一些文章的基础属性，例如日期，标题，摘要等，具体的元数据可以参看pelican文档</li>
+<li>正文和metadata以空行隔开</li>
+</ul>
+<p>写好文章后，将其命名为hello_world.md（.md为markdown源文件的后缀名），然后在project根目录运行<code>pelican /path/to/your/content/ [-s path/to/your/settings.py]</code>，其中，<code>/path/to/your/content</code>即是存放文章源文件的目录，刚才我们使用了content目录，该目录的名称可以在<code>pelicanconf.py</code>中配置，甚至，输出目录<code>output</code>都可以用其他配置文件代替，配置文件<code>pelicanconf.py</code>也可以是其他的配置文件，只需要指定<code>path/to/your/settings.py</code>即可。</p>
+<p><strong>TIPS</strong>:
+写好文章后，利用刚才的命令，就已经生成好页面到<code>output</code>目录了，这时可以利用<code>make serve</code>命令启动一个本地服务器，通过访问<code>localhost.com:8000</code>来访问生成的页面</p>
+<h2>主题</h2>
+<p>pelican支持各种主题，<a href="http://pelicanthemes.com/">这里</a>有各种主题及其下载链接，主题的安装和配置可以使用<code>pelican-theme</code>工具，具体方法参见<code>pelican-theme --help</code></p>
+<h2>配置pelican</h2>
+<p>配置文件<code>pelicanconf.py</code>包括了众多选项，可以参见<a href="http://docs.getpelican.com/en/3.5.0/settings.html">该页</a>进行配置</p>
+<h2>git端的配置</h2>
+<p>在生成好第一篇文章后，可以进入到<code>output</code>目录，这里的内容就是即将托管到<code>gitcafe pages</code>的静态页面，首先，到gitcafe.com建立一个user pages或者project pages，方法参见<a href="https://gitcafe.com/GitCafe/Help/wiki/Pages-%E7%9B%B8%E5%85%B3%E5%B8%AE%E5%8A%A9#wiki">官方帮助文档</a>，简化下来的步骤就是：</p>
+<ol>
+<li>在gitcafe.com中建立一个和用户名相同的repo</li>
+<li>根据刚建立的空repo首页，将git username和email配置为相应的数据（在github中，非验证邮箱和用户名会导致pages build failure，不知道gitcafe是否有一样的机制）</li>
+<li>在<code>output</code>目录，依次运行</li>
+</ol>
+<div class="highlight"><pre><span></span>    git init <span class="c1">#初始化仓库</span>
+    git checkout -b gitcafe-pages <span class="c1">#建立制定分支，pages只会渲染该分支中的页面</span>
+    git add -A <span class="c1">#添加修改</span>
+    git commit -m<span class="s2">&quot;init the blog&quot;</span> <span class="c1">#提交</span>
+    git remote add gitcafe git@gitcafe.com:pkking/pkking.git <span class="c1">#pkking替换为你的gitcafe用户名</span>
+    git push gitcafe gitcafe-pages <span class="c1">#将提交push到gitcafe</span>
+</pre></div>
+
+
+<ol>
+<li>OK，一切就绪，访问pkking.gitcafe.io查看渲染好的页面吧</li>
+</ol>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="http://pkking.github.com/tag/python.html">python</a>
+      <a href="http://pkking.github.com/tag/pelican.html">pelican</a>
+      <a href="http://pkking.github.com/tag/gitcafe.html">gitcafe</a>
+      <a href="http://pkking.github.com/tag/bo-ke.html">博客</a>
+    </p>
+  </div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'lcrpkking';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</article>
+
+    <footer>
+        <p>&copy; lichaoran </p>
+<p>Built using <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a></p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "BlogPosting",
+  "name": "利用pelican和gitcafe搭建博客",
+  "headline": "利用pelican和gitcafe搭建博客",
+  "datePublished": "2015-02-18 19:30:00+08:00",
+  "dateModified": "",
+  "author": {
+    "@type": "Person",
+    "name": "lichaoran",
+    "url": "http://pkking.github.com/author/lichaoran.html"
+  },
+  "image": "{{ SITEURL }}/{{ THEME_STATIC_DIR }}/img/profile.png",
+  "url": "http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/",
+  "description": "介绍 pelican是基于python的静态web站点生成器，由python编写 目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican 文档详见pelican，本文基于pelican 3.5.0版本 源码 特性： 支持markdown，html和rst 支持各种主题theme 支持插件 代码高亮 gitcafe pages gitcafe pages是类似于github pages的服务，不过国内访问速度更良心 WHY gitcafe github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见该文 QuickStart 在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便 ..."
+}
+</script></body>
+</html>

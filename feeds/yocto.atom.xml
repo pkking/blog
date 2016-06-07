@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>WAAAGH!</title><link href="http://pkking.github.com/" rel="alternate"></link><link href="http://pkking.github.com/feeds/yocto.atom.xml" rel="self"></link><id>http://pkking.github.com/</id><updated>2015-03-11T19:30:00+08:00</updated><entry><title>Yocto源码分析</title><link href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/" rel="alternate"></link><published>2015-03-11T19:30:00+08:00</published><author><name>lichaoran</name></author><id>tag:pkking.github.com,2015-03-11:posts/2015/Mar/11/yoctoyuan-ma-fen-xi/</id><summary type="html">&lt;h2&gt;server如何运作&lt;/h2&gt;
+&lt;p&gt;在&lt;code&gt;bb/server/process.py&lt;/code&gt;中，定义了当Yocto采用多进程&lt;code&gt;B/S&lt;/code&gt;架构时，&lt;code&gt;server&lt;/code&gt;进程的启动方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;start_server()&lt;/code&gt;，在&lt;code&gt;bin/bitbake&lt;/code&gt;中，包含了一个&lt;code&gt;start_server()&lt;/code&gt;函数，该函数根据命令行参数，实例化相应的&lt;code&gt;server&lt;/code&gt;对象，并且调用&lt;code&gt;server&lt;/code&gt;的&lt;code&gt;detach&lt;/code&gt;函数，这个函数则调用了&lt;code&gt;server&lt;/code&gt;对象的&lt;code&gt;start()&lt;/code&gt;函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;run()&lt;/code&gt;:在&lt;code&gt;bb.server.ProcessServer&lt;/code&gt;类中，存在一个&lt;code&gt;run&lt;/code&gt;函数，该函数设置了一些UI事件，并且调用了&lt;code&gt;bb.cooker.server_main()&lt;/code&gt;，该函数接受两个参数，第一个是一个cooker实例，第二个是一个可执行的函数，Yocto中将&lt;code&gt;self.cooker&lt;/code&gt;和&lt;code&gt;self.main&lt;/code&gt;作为这两个参数，由于&lt;code&gt;ProcessServer&lt;/code&gt;类继承于&lt;code&gt;Process&lt;/code&gt;类，因此在调用该类的&lt;code&gt;start()&lt;/code&gt;方法时，&lt;code&gt;run()&lt;/code&gt;会被自动调用，因此在调用&lt;code&gt;server.start()&lt;/code&gt;时，实际调用的是&lt;code&gt;server_main()&lt;/code&gt;函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;server_main()&lt;/code&gt;:该函数执行一些预处理任务（&lt;code&gt;bb.cooker.pre_serve()&lt;/code&gt;），然后调用传进来的函数并且返回其返回值:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/cooker.py&amp;#39;&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;server_main&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pre_serve&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="c1"&gt;#something else&lt;/span&gt;
+         &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;post_serve&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;而这里的&lt;code&gt;func&lt;/code&gt;，即是上面传进来的&lt;code&gt;bb.server.ProcessServer.main&lt;/code&gt;，因此调用&lt;code&gt;server_main()&lt;/code&gt;实际上是调用了&lt;code&gt;ProcessServer&lt;/code&gt;类的&lt;code&gt;main()&lt;/code&gt;函数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ProcessServer.main()&lt;/code&gt;:该函数会执行一个重要的&lt;code&gt;while&lt;/code&gt;循环：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/server/process.py&amp;#39;&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="c1"&gt;# Ignore SIGINT within the server, as all SIGINT handling is done by&lt;/span&gt;
+    &lt;span class="c1"&gt;# the UI and communicated to us&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitin&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SIGINT&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SIG_IGN&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt; &lt;span class="c1"&gt;# 检测是否有命令数据&lt;/span&gt;
+                &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recv&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recv&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+    &lt;span class="c1"&gt;# 若无数据可读，执行注册的idle命令&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;idle_commands&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_reader&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exception&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Running command &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;unregister_UIHhandler&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_handle&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;shutdown&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;在其中不断的从两个管道中读取数据，一个管道为命令管道，这个管道两头连接着&lt;code&gt;ui&lt;/code&gt;和&lt;code&gt;server&lt;/code&gt;，这样server就可以接受来自&lt;code&gt;ui&lt;/code&gt;的命令，并把执行结果返回给&lt;code&gt;ui&lt;/code&gt;；另一个管道为异常管道，当其他模块在产生不可恢复的异常后，会向这个管道发送&lt;code&gt;'quit'&lt;/code&gt;消息，接收到该命令后主循环直接退出；在检查完这两个管道后，主循环调用&lt;code&gt;idle_commands()&lt;/code&gt;，并设置0.1秒的延时，用于等待几个管道的数据&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;idle_commands&lt;/code&gt;：该函数调用&lt;code&gt;register_idle_function&lt;/code&gt;函数注册的&lt;code&gt;idle&lt;/code&gt;函数，这个函数在&lt;code&gt;bb.Command.runCommand()&lt;/code&gt;中，通过&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;server_register_idlecallback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommands&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;这段代码注册，可以看到，注册的函数为`bb.cooker.runCommands`，然后该函数调用这个注册的函数，如果未找到注册函数，则调用`select.select()`等待0.1秒后返回。
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bb.cooker.runCommands&lt;/code&gt;:该函数就是被注册的idle函数，他会被&lt;code&gt;server&lt;/code&gt;主循环周期的调用，而该函数的实际内容，则是调用&lt;code&gt;bb.command.Command.runAsyncCommand&lt;/code&gt;来执行一个已经就绪的异步命令&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bb.command.Command.runAsyncCommand&lt;/code&gt;:该函数会判断当前cooker从状态，而分别调用&lt;code&gt;updateCache()&lt;/code&gt;函数或者调用&lt;code&gt;command&lt;/code&gt;对象的&lt;code&gt;currentAsyncCommand&lt;/code&gt;成员函数，这个函数会在多种情况下被赋值为某个函数对象和其参数组成的元组&lt;code&gt;(command, options)&lt;/code&gt;，当该函数被调用时，则会执行在&lt;code&gt;currentAsyncCommand&lt;/code&gt;注册的函数，而&lt;code&gt;updateCache()&lt;/code&gt;则会为启动其他的任务，例如&lt;code&gt;parse&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;currentAsyncCommand&lt;/code&gt;的赋值：&lt;code&gt;currentAsyncCommand&lt;/code&gt;只会在&lt;code&gt;command.runCommand&lt;/code&gt;函数中被赋值，而&lt;code&gt;command.runCommand&lt;/code&gt;函数，则会在&lt;code&gt;server&lt;/code&gt;对象的&lt;code&gt;runCommand()&lt;/code&gt;中被调用，&lt;code&gt;server.runCommand()&lt;/code&gt;的调用，则出现在&lt;code&gt;ui&lt;/code&gt;端的&lt;code&gt;main()&lt;/code&gt;中唯一一次主动调用&lt;code&gt;server&lt;/code&gt;的代码，这样，即是在&lt;code&gt;ui&lt;/code&gt;端的&lt;code&gt;main&lt;/code&gt;函数中，启动了&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;依赖关系如何解析&lt;/h2&gt;
+&lt;p&gt;代码位于&lt;code&gt;bb.runqueue.RunQueueData.prepare()&lt;/code&gt;函数中的注释的&lt;code&gt;PART A&lt;/code&gt;部分和内嵌函数&lt;code&gt;generate_recdeps&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;bb文件如何解析&lt;/h2&gt;
+&lt;p&gt;入口位于&lt;code&gt;bb.cooker.updateCache()&lt;/code&gt;函数中，该函数中有如下代码：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parser&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;CookerParser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;filelist&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;masked&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这段代码初始化了一个&lt;code&gt;CookerParser&lt;/code&gt;对象，这个对象的构造函数中，调用了&lt;code&gt;self.start()&lt;/code&gt;，因此这段代码直接启动了bb文件的解析，具体的&lt;code&gt;start()&lt;/code&gt;函数代码在&lt;code&gt;bb/cooker.py&lt;/code&gt;中的&lt;code&gt;CookerParser&lt;/code&gt;类中&lt;/p&gt;
+&lt;h2&gt;UI端如何运作&lt;/h2&gt;
+&lt;p&gt;由于在Yocto中，服务进程先于UI启动，因此第一次执行命令需要通过&lt;code&gt;ui&lt;/code&gt;传递给&lt;code&gt;server&lt;/code&gt;，而&lt;code&gt;ui&lt;/code&gt;的入口函数，则是位于&lt;code&gt;lib/ui/ui_module_name.py&lt;/code&gt;文件中的&lt;code&gt;main()&lt;/code&gt;函数，根据采用的不同的&lt;code&gt;ui&lt;/code&gt;模块（默认采用knotty.py），&lt;code&gt;main&lt;/code&gt;函数有不同的行为，这里以knotty.py中的main作为例子进行分析&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bb.ui.knotty.main&lt;/code&gt; 这个函数为&lt;code&gt;ui&lt;/code&gt;端的入口函数，最核心的代码为&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/ui/knotty.py&amp;#39;&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;observe_only&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;updateFromServer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;updateToServer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;cmdline&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parseActions&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Nothing to do.  Use &amp;#39;bitbake world&amp;#39; to build everything, or run &amp;#39;bitbake --help&amp;#39; for usage information.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+
+        &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;action&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Command &amp;#39;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;#39; failed: &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Command &amp;#39;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;#39; failed: returned &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这段代码，通过&lt;code&gt;params.parseActions()&lt;/code&gt;从用户调用的&lt;code&gt;bitbake &amp;lt;target&amp;gt;&lt;/code&gt;命令，解析出一个&lt;code&gt;cmdline&lt;/code&gt;字典，其中的&lt;code&gt;action&lt;/code&gt;键是一个列表，其中包含了要运行的命令的字符串格式，要构建的目标&lt;code&gt;&amp;lt;target&amp;gt;&lt;/code&gt;和构建的cmd（默认为&lt;code&gt;build&lt;/code&gt;），例如:&lt;code&gt;cmdline[action]=["buildTarget", "zlib", "build"]&lt;/code&gt;，就意味着即将要运行的命令为&lt;code&gt;buildTarget&lt;/code&gt;，构建目标为&lt;code&gt;zlib&lt;/code&gt;，cmd为&lt;code&gt;build&lt;/code&gt;；而&lt;code&gt;msg&lt;/code&gt;键对应了需要传送给&lt;code&gt;server&lt;/code&gt;端显示的消息，当命令行参数解析到不合适的内容时，则会发送给服务器结束命令，关闭&lt;code&gt;ui&lt;/code&gt;和&lt;code&gt;server&lt;/code&gt;进程。
+    如果没有出错，通常的第一个&lt;code&gt;action&lt;/code&gt;都是&lt;code&gt;buildTarget&lt;/code&gt;，这个&lt;code&gt;action&lt;/code&gt;随后被作为参数，传给&lt;code&gt;bb.server.ServerCommunicator.runCommand()&lt;/code&gt;函数，该函数调用服务端的函数&lt;code&gt;bb.server.ProcessServer.runCommand&lt;/code&gt;来执行命令&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;bb.server.ProcessServer.runCommand&lt;/code&gt;:该函数将上面&lt;code&gt;action&lt;/code&gt;中的命令数据通过&lt;code&gt;bb.cooker.command.runCommand()&lt;/code&gt;进行处理，并将返回值通过管道发送给&lt;code&gt;ui&lt;/code&gt;端，这也是唯一一次&lt;code&gt;ui&lt;/code&gt;端显式的调用&lt;code&gt;server&lt;/code&gt;的函数。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;各种event的处理：在&lt;code&gt;bb.ui.knotty.main()&lt;/code&gt;中，存在着一个&lt;code&gt;while&lt;/code&gt;循环，该循环读取服务端的管道，并根据服务端返回的命令执行结果和状态执行相应的代码，或者关闭服务端，或者继续发送命令。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;buildTarget&lt;/h2&gt;
+&lt;p&gt;在 &lt;code&gt;bitbake/bb/cooker.py&lt;/code&gt;中，有一个&lt;code&gt;buildTarget&lt;/code&gt;函数，该函数为在无任何参数的&lt;code&gt;bitbake&lt;/code&gt;命令时的服务端入口，例如:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ bitbake zlib &lt;span class="c1"&gt;#target 为 zlib&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这是服务端会调用&lt;code&gt;buildTarget&lt;/code&gt;作为如何，该函数如下:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;buildTargets&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;    Attempt to build the targets specified&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;buildTargetsIdle&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;abort&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;abort&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;forceshutdown&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finish_runqueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Forced shutdown&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;shutdown&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finish_runqueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Stopped build&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;failures&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execute_runqueue&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="n"&gt;runqueue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TaskFailure&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;failures&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;SystemExit&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finishAsyncCommand&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BuildCompleted&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rqdata&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runq_fnid&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;buildname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;failures&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finishAsyncCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;msg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;buildSetVars&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;taskdata&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;runlist&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fulltargetlist&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;buildTaskData&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;abort&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;buildname&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getVar&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;BUILDNAME&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BuildStarted&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;buildname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fulltargetlist&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;rq&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runqueue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RunQueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recipecache&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;taskdata&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;runlist&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;universe&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rqdata&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;warn_multi_bb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;server_register_idlecallback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;buildTargetsIdle&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;可以看到，这个函数做了以下几件事：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;定义了一个内嵌函数&lt;code&gt;buildTargetsIdle&lt;/code&gt;，看名字可以得知，该内嵌函数会作为&lt;code&gt;idle&lt;/code&gt;函数被注册到&lt;code&gt;server&lt;/code&gt;中，周期的被调用&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self.buildSetVars()&lt;/code&gt;用于设置一些和&lt;code&gt;BUILDNAME&lt;/code&gt;,&lt;code&gt;BUILDTIME&lt;/code&gt;等变量&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;buildTaskData&lt;/code&gt;用于生成任务数据，其中包括&lt;code&gt;taskdata&lt;/code&gt;，&lt;code&gt;runlist&lt;/code&gt;，和&lt;code&gt;fulltargetlist&lt;/code&gt;；其中，&lt;code&gt;taskdata&lt;/code&gt;是一个&lt;code&gt;bb.taskdata.TaskData&lt;/code&gt;类的实例，这个对象中包含了和该任务相关的信息，例如依赖，任务名等，&lt;code&gt;runlist&lt;/code&gt;则是该任务的各个目标的名称和对应的task，并以列表的形式进行存储，例如&lt;code&gt;["base-files","do_build"]&lt;/code&gt;就代表了目标&lt;code&gt;base-files&lt;/code&gt;，其task为&lt;code&gt;do_build&lt;/code&gt;，而&lt;code&gt;fulltargetlist&lt;/code&gt;则是所有target的列表&lt;/li&gt;
+&lt;li&gt;通过&lt;code&gt;rq = bb.runqueue.RunQueue(self, self.data, self.recipecache, taskdata, runlist)&lt;/code&gt;来构造一个&lt;code&gt;RunQueue&lt;/code&gt;实例，为随后的build工作做好准备&lt;/li&gt;
+&lt;li&gt;将定义的内嵌函数注册为&lt;code&gt;idle&lt;/code&gt;回调函数，使其被周期地调用，因此，我们需要分析该函数的实现：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;buildTargetsIdle&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;根据上面的代码，该函数主要执行了&lt;code&gt;rq.execute_runqueue()&lt;/code&gt;函数，该函数位于&lt;code&gt;bb/runqueue.py&lt;/code&gt;中，而&lt;code&gt;execute_runqueue()&lt;/code&gt;又调用了&lt;code&gt;_execute_runqueue()&lt;/code&gt;，而&lt;code&gt;_execute_runqueue()&lt;/code&gt;的实际工作，是根据&lt;code&gt;runqueue&lt;/code&gt;的实际状态，进行不同的行为：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在&lt;code&gt;runQueuePrepare&lt;/code&gt;态，调用&lt;code&gt;bb.runqueue.RunQueueData.prepare()&lt;/code&gt;，这个函数是很相当长的函数，主要行为包括：&lt;ol&gt;
+&lt;li&gt;STEP A:解析出一个需要执行的任务列表，包括解析依赖&lt;/li&gt;
+&lt;li&gt;STEP B:标记所有需要执行的任务&lt;/li&gt;
+&lt;li&gt;STEP C:去掉不需要执行的任务&lt;/li&gt;
+&lt;li&gt;STEP D:检测并确定最终的需要执行的任务列表&lt;/li&gt;
+&lt;li&gt;进入&lt;code&gt;runQueueSceneInit&lt;/code&gt;状态&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueSceneInit&lt;/code&gt;状态，调用&lt;code&gt;runqueue.start_worker()&lt;/code&gt;启动，启动工作进程，并构建一个&lt;code&gt;RunQueueExecuteScenequeue&lt;/code&gt;对象，将状态设置为&lt;code&gt;runQueueSceneRun&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueSceneRun&lt;/code&gt;状态，调用&lt;code&gt;RunQueueExecuteScenequeue.execute()&lt;/code&gt;，该函数会将准备好的task依次运行，随后，将状态设置为&lt;code&gt;runQueueRunInit&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueRunInit&lt;/code&gt;状态，会构造一个&lt;code&gt;RunQueueExecuteTasks&lt;/code&gt;对象，然后将状态设置为&lt;code&gt;runQueueRunning&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueRunning&lt;/code&gt;状态，会调用&lt;code&gt;RunQueueExecuteTasks&lt;/code&gt;对象的&lt;code&gt;execute()&lt;/code&gt;函数，该函数会执行在上面的&lt;code&gt;RunQueueData&lt;/code&gt;状态中准备的task，并进入&lt;code&gt;runQueueCleanUp&lt;/code&gt;状态&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;runQueueCleanUp&lt;/code&gt;状态，调用&lt;code&gt;RunQueueExecute.finish()&lt;/code&gt;函数，并将状态设置为&lt;code&gt;runQueueComplete&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;runQueueComplete&lt;/code&gt;状态，销毁worker，然后该函数返回&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;载入cache的入口&lt;/h2&gt;
+&lt;p&gt;入口函数是&lt;code&gt;bb/cache.py&lt;/code&gt;中的&lt;code&gt;load_cachefile()&lt;/code&gt;函数&lt;/p&gt;
+&lt;h2&gt;run.do_xxx 脚本如何生成&lt;/h2&gt;
+&lt;p&gt;在&lt;code&gt;bb/build.py&lt;/code&gt;中，存在&lt;code&gt;exec_func&lt;/code&gt;函数，该函数运行的某个函数，将会在&lt;code&gt;build/tmp/work&lt;/code&gt;中创建&lt;code&gt;run.do_xxx.pid&lt;/code&gt;名称的脚本，并运行它&lt;/p&gt;
+&lt;h2&gt;如何生成image&lt;/h2&gt;
+&lt;p&gt;yocto在构建完成所有的软件包后，会将所有构建的软件包放在&lt;code&gt;${TMPDIR}/deploy&lt;/code&gt;目录下，称之为软件源，在启动构建rootfs的活动（名为&lt;code&gt;do_rootfs&lt;/code&gt;的task）后，将会执行三个函数：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;create_manifest() 构建软件包的manifest用于test image，并且生成一个&lt;code&gt;package&lt;/code&gt;列表为&lt;code&gt;create_rootfs()&lt;/code&gt;函数提供需要安装的软件包列表&lt;/li&gt;
+&lt;li&gt;create_rootfs() 构建rootfs文件系统，包括执行&lt;code&gt;pre_cmd&lt;/code&gt;，安装所需软件包，构建/etc ,/dev等目录，构建内核模块，运行ldconfig等，完成rootfs的构建&lt;/li&gt;
+&lt;li&gt;create_image 根据image的压缩类型和文件系统类型，制作一个或多个image&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="python"></category><category term="Yocto"></category></entry></feed>

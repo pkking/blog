@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://pkking.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="WAAAGH! Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="" />
+
+
+    <meta name="author" content="lichaoran" />
+    <meta name="description" content="" />
+<meta property="og:site_name" content="WAAAGH!"/>
+<meta property="og:type" content="blog"/>
+<meta property="og:title" content="WAAAGH!"/>
+<meta property="og:description" content=""/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://pkking.github.com"/>
+
+  <title>WAAAGH! &ndash; Category: yocto</title>
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://pkking.github.com">
+        <img src="http://pkking.github.com/theme/img/profile.png" alt="" title="">
+      </a>
+      <h1><a href="http://pkking.github.com"></a></h1>
+      <nav>
+        <ul class="list">
+          <li><a href="http://pkking.github.com/pages/guan-yu-zi-ji.html#guan-yu-zi-ji">关于自己</a></li>
+          <li><a href="https://github.com/pkking" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+      <ul class="social">
+        <li><a class="sc-weibo" href="http://weibo.com/lcrrrr/" target="_blank"><i class="fa fa-weibo"></i></a></li>
+        <li><a class="sc-twitter" href="https://twitter.com/li_chaoran" target="_blank"><i class="fa fa-twitter"></i></a></li>
+      </ul>
+    </div>
+  </aside>
+  <main>
+
+<article>
+  <header>
+    <h2><a href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#yoctoyuan-ma-fen-xi">Yocto源码分析</a></h2>
+    <p>
+      Posted on 2015-03-11 in <a href="http://pkking.github.com/category/yocto.html">yocto</a>
+      &#8226; Tagged with
+      <a href="http://pkking.github.com/tag/python.html">python</a>,      <a href="http://pkking.github.com/tag/yocto.html">Yocto</a>      &#8226; <a href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#disqus_thread">Leave a comment</a>
+    </p>
+  </header>
+  <div>
+      <h2>server如何运作</h2>
+<p>在<code>bb/server/process.py</code>中，定义了当Yocto采用多进程<code>B/S</code>架构时，<code>server</code>进程的启动方式：</p>
+<ul>
+<li><code>start_server()</code>，在<code>bin/bitbake</code>中，包含了一个<code>start_server()</code>函数，该函数根据命令行参数，实例化相应的<code>server</code>对象，并且调用<code>server</code>的<code>detach</code>函数，这个函数则调用了<code>server</code>对象的<code>start()</code>函数</li>
+<li><code>run()</code>:在<code>bb.server.ProcessServer</code>类中，存在一个<code>run</code>函数，该函数设置了一些UI事件，并且调用了<code>bb.cooker.server_main()</code>，该函数接受两个参数 ...</li></ul>
+      <a class="btn" href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/#yoctoyuan-ma-fen-xi">Continue reading</a>
+  </div>
+</article>
+
+  <div class="pagination">
+  </div>
+
+    <footer>
+        <p>&copy; lichaoran </p>
+<p>Built using <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a></p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context" : "http://schema.org",
+  "@type" : "Blog",
+  "name": " WAAAGH! ",
+  "url" : "http://pkking.github.com",
+  "image": "",
+  "description": ""
+}
+</script><script type="text/javascript">
+    var disqus_shortname = 'lcrpkking';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+</html>

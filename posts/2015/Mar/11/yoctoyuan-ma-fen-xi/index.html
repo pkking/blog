@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/stylesheet/style.min.css">
+
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/pygments/github.min.css">
+  <link rel="stylesheet" type="text/css" href="http://pkking.github.com/theme/font-awesome/css/font-awesome.min.css">
+
+
+    <link href="http://pkking.github.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="WAAAGH! Atom">
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="" />
+
+
+<meta name="author" content="lichaoran" />
+<meta name="description" content="server如何运作 在bb/server/process.py中，定义了当Yocto采用多进程B/S架构时，server进程的启动方式： start_server()，在bin/bitbake中，包含了一个start_server()函数，该函数根据命令行参数，实例化相应的server对象，并且调用server的detach函数，这个函数则调用了server对象的start()函数 run():在bb.server.ProcessServer类中，存在一个run函数，该函数设置了一些UI事件，并且调用了bb.cooker.server_main()，该函数接受两个参数 ..." />
+<meta name="keywords" content="python, Yocto">
+<meta property="og:site_name" content="WAAAGH!"/>
+<meta property="og:title" content="Yocto源码分析"/>
+<meta property="og:description" content="server如何运作 在bb/server/process.py中，定义了当Yocto采用多进程B/S架构时，server进程的启动方式： start_server()，在bin/bitbake中，包含了一个start_server()函数，该函数根据命令行参数，实例化相应的server对象，并且调用server的detach函数，这个函数则调用了server对象的start()函数 run():在bb.server.ProcessServer类中，存在一个run函数，该函数设置了一些UI事件，并且调用了bb.cooker.server_main()，该函数接受两个参数 ..."/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:url" content="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/"/>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2015-03-11 19:30:00+08:00"/>
+<meta property="article:modified_time" content=""/>
+<meta property="article:author" content="http://pkking.github.com/author/lichaoran.html">
+<meta property="article:section" content="yocto"/>
+<meta property="article:tag" content="python"/>
+<meta property="article:tag" content="Yocto"/>
+<meta property="og:image" content="">
+  <title>WAAAGH! &ndash; Yocto源码分析</title>
+</head>
+<body>
+  <aside>
+    <div>
+      <a href="http://pkking.github.com">
+        <img src="http://pkking.github.com/theme/img/profile.png" alt="" title="">
+      </a>
+      <h1><a href="http://pkking.github.com"></a></h1>
+      <nav>
+        <ul class="list">
+          <li><a href="http://pkking.github.com/pages/guan-yu-zi-ji.html#guan-yu-zi-ji">关于自己</a></li>
+          <li><a href="https://github.com/pkking" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+      <ul class="social">
+        <li><a class="sc-weibo" href="http://weibo.com/lcrrrr/" target="_blank"><i class="fa fa-weibo"></i></a></li>
+        <li><a class="sc-twitter" href="https://twitter.com/li_chaoran" target="_blank"><i class="fa fa-twitter"></i></a></li>
+      </ul>
+    </div>
+  </aside>
+  <main>
+
+<article>
+  <header>
+    <h1 id="yoctoyuan-ma-fen-xi">Yocto源码分析</h1>
+    <p>Posted on 2015-03-11 in <a href="http://pkking.github.com/category/yocto.html">yocto</a></p>
+  </header>
+  <div>
+    <h2>server如何运作</h2>
+<p>在<code>bb/server/process.py</code>中，定义了当Yocto采用多进程<code>B/S</code>架构时，<code>server</code>进程的启动方式：</p>
+<ul>
+<li><code>start_server()</code>，在<code>bin/bitbake</code>中，包含了一个<code>start_server()</code>函数，该函数根据命令行参数，实例化相应的<code>server</code>对象，并且调用<code>server</code>的<code>detach</code>函数，这个函数则调用了<code>server</code>对象的<code>start()</code>函数</li>
+<li><code>run()</code>:在<code>bb.server.ProcessServer</code>类中，存在一个<code>run</code>函数，该函数设置了一些UI事件，并且调用了<code>bb.cooker.server_main()</code>，该函数接受两个参数，第一个是一个cooker实例，第二个是一个可执行的函数，Yocto中将<code>self.cooker</code>和<code>self.main</code>作为这两个参数，由于<code>ProcessServer</code>类继承于<code>Process</code>类，因此在调用该类的<code>start()</code>方法时，<code>run()</code>会被自动调用，因此在调用<code>server.start()</code>时，实际调用的是<code>server_main()</code>函数</li>
+<li><code>server_main()</code>:该函数执行一些预处理任务（<code>bb.cooker.pre_serve()</code>），然后调用传进来的函数并且返回其返回值:</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="c1">#__file__ = &#39;bitbake/lib/bb/cooker.py&#39;</span>
+
+<span class="k">def</span> <span class="nf">server_main</span><span class="p">(</span><span class="n">cooker</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">cooker</span><span class="o">.</span><span class="n">pre_serve</span><span class="p">()</span>
+    <span class="c1">#something else</span>
+         <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">cooker</span><span class="o">.</span><span class="n">post_serve</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ret</span>
+</pre></div>
+
+
+<p>而这里的<code>func</code>，即是上面传进来的<code>bb.server.ProcessServer.main</code>，因此调用<code>server_main()</code>实际上是调用了<code>ProcessServer</code>类的<code>main()</code>函数</p>
+<ul>
+<li><code>ProcessServer.main()</code>:该函数会执行一个重要的<code>while</code>循环：</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="c1">#__file__ = &#39;bitbake/lib/bb/server/process.py&#39;</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1"># Ignore SIGINT within the server, as all SIGINT handling is done by</span>
+    <span class="c1"># the UI and communicated to us</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">quitin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIG_IGN</span><span class="p">)</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_channel</span><span class="o">.</span><span class="n">poll</span><span class="p">():</span> <span class="c1"># 检测是否有命令数据</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_channel</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">runCommand</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quitout</span><span class="o">.</span><span class="n">poll</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">quitout</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">quit</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="c1"># 若无数据可读，执行注册的idle命令</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idle_commands</span><span class="p">(</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">_reader</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quitout</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Running command </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">bb</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">unregister_UIHhandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_handle</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">command_channel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">cooker</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+
+
+<p>在其中不断的从两个管道中读取数据，一个管道为命令管道，这个管道两头连接着<code>ui</code>和<code>server</code>，这样server就可以接受来自<code>ui</code>的命令，并把执行结果返回给<code>ui</code>；另一个管道为异常管道，当其他模块在产生不可恢复的异常后，会向这个管道发送<code>'quit'</code>消息，接收到该命令后主循环直接退出；在检查完这两个管道后，主循环调用<code>idle_commands()</code>，并设置0.1秒的延时，用于等待几个管道的数据</p>
+<ul>
+<li><code>idle_commands</code>：该函数调用<code>register_idle_function</code>函数注册的<code>idle</code>函数，这个函数在<code>bb.Command.runCommand()</code>中，通过</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">cooker</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">server_register_idlecallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cooker</span><span class="o">.</span><span class="n">runCommands</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cooker</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>这段代码注册，可以看到，注册的函数为`bb.cooker.runCommands`，然后该函数调用这个注册的函数，如果未找到注册函数，则调用`select.select()`等待0.1秒后返回。
+</pre></div>
+
+
+<ul>
+<li><code>bb.cooker.runCommands</code>:该函数就是被注册的idle函数，他会被<code>server</code>主循环周期的调用，而该函数的实际内容，则是调用<code>bb.command.Command.runAsyncCommand</code>来执行一个已经就绪的异步命令</li>
+<li><code>bb.command.Command.runAsyncCommand</code>:该函数会判断当前cooker从状态，而分别调用<code>updateCache()</code>函数或者调用<code>command</code>对象的<code>currentAsyncCommand</code>成员函数，这个函数会在多种情况下被赋值为某个函数对象和其参数组成的元组<code>(command, options)</code>，当该函数被调用时，则会执行在<code>currentAsyncCommand</code>注册的函数，而<code>updateCache()</code>则会为启动其他的任务，例如<code>parse</code></li>
+<li><code>currentAsyncCommand</code>的赋值：<code>currentAsyncCommand</code>只会在<code>command.runCommand</code>函数中被赋值，而<code>command.runCommand</code>函数，则会在<code>server</code>对象的<code>runCommand()</code>中被调用，<code>server.runCommand()</code>的调用，则出现在<code>ui</code>端的<code>main()</code>中唯一一次主动调用<code>server</code>的代码，这样，即是在<code>ui</code>端的<code>main</code>函数中，启动了</li>
+</ul>
+<h2>依赖关系如何解析</h2>
+<p>代码位于<code>bb.runqueue.RunQueueData.prepare()</code>函数中的注释的<code>PART A</code>部分和内嵌函数<code>generate_recdeps</code></p>
+<h2>bb文件如何解析</h2>
+<p>入口位于<code>bb.cooker.updateCache()</code>函数中，该函数中有如下代码：</p>
+<div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">CookerParser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filelist</span><span class="p">,</span> <span class="n">masked</span><span class="p">)</span>
+</pre></div>
+
+
+<p>这段代码初始化了一个<code>CookerParser</code>对象，这个对象的构造函数中，调用了<code>self.start()</code>，因此这段代码直接启动了bb文件的解析，具体的<code>start()</code>函数代码在<code>bb/cooker.py</code>中的<code>CookerParser</code>类中</p>
+<h2>UI端如何运作</h2>
+<p>由于在Yocto中，服务进程先于UI启动，因此第一次执行命令需要通过<code>ui</code>传递给<code>server</code>，而<code>ui</code>的入口函数，则是位于<code>lib/ui/ui_module_name.py</code>文件中的<code>main()</code>函数，根据采用的不同的<code>ui</code>模块（默认采用knotty.py），<code>main</code>函数有不同的行为，这里以knotty.py中的main作为例子进行分析</p>
+<ul>
+<li><code>bb.ui.knotty.main</code> 这个函数为<code>ui</code>端的入口函数，最核心的代码为</li>
+</ul>
+<div class="highlight"><pre><span></span>    <span class="c1">#__file__ = &#39;bitbake/lib/bb/ui/knotty.py&#39;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="o">.</span><span class="n">observe_only</span><span class="p">:</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">updateFromServer</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">updateToServer</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+        <span class="n">cmdline</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">parseActions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cmdline</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Nothing to do.  Use &#39;bitbake world&#39; to build everything, or run &#39;bitbake --help&#39; for usage information.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;msg&#39;</span> <span class="ow">in</span> <span class="n">cmdline</span> <span class="ow">and</span> <span class="n">cmdline</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">cmdline</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">runCommand</span><span class="p">(</span><span class="n">cmdline</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Command &#39;</span><span class="si">%s</span><span class="s2">&#39; failed: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmdline</span><span class="p">,</span> <span class="n">error</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">ret</span> <span class="o">!=</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Command &#39;</span><span class="si">%s</span><span class="s2">&#39; failed: returned </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmdline</span><span class="p">,</span> <span class="n">ret</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span>
+</pre></div>
+
+
+<p>这段代码，通过<code>params.parseActions()</code>从用户调用的<code>bitbake &lt;target&gt;</code>命令，解析出一个<code>cmdline</code>字典，其中的<code>action</code>键是一个列表，其中包含了要运行的命令的字符串格式，要构建的目标<code>&lt;target&gt;</code>和构建的cmd（默认为<code>build</code>），例如:<code>cmdline[action]=["buildTarget", "zlib", "build"]</code>，就意味着即将要运行的命令为<code>buildTarget</code>，构建目标为<code>zlib</code>，cmd为<code>build</code>；而<code>msg</code>键对应了需要传送给<code>server</code>端显示的消息，当命令行参数解析到不合适的内容时，则会发送给服务器结束命令，关闭<code>ui</code>和<code>server</code>进程。
+    如果没有出错，通常的第一个<code>action</code>都是<code>buildTarget</code>，这个<code>action</code>随后被作为参数，传给<code>bb.server.ServerCommunicator.runCommand()</code>函数，该函数调用服务端的函数<code>bb.server.ProcessServer.runCommand</code>来执行命令</p>
+<ul>
+<li>
+<p><code>bb.server.ProcessServer.runCommand</code>:该函数将上面<code>action</code>中的命令数据通过<code>bb.cooker.command.runCommand()</code>进行处理，并将返回值通过管道发送给<code>ui</code>端，这也是唯一一次<code>ui</code>端显式的调用<code>server</code>的函数。</p>
+</li>
+<li>
+<p>各种event的处理：在<code>bb.ui.knotty.main()</code>中，存在着一个<code>while</code>循环，该循环读取服务端的管道，并根据服务端返回的命令执行结果和状态执行相应的代码，或者关闭服务端，或者继续发送命令。</p>
+</li>
+</ul>
+<h2>buildTarget</h2>
+<p>在 <code>bitbake/bb/cooker.py</code>中，有一个<code>buildTarget</code>函数，该函数为在无任何参数的<code>bitbake</code>命令时的服务端入口，例如:</p>
+<div class="highlight"><pre><span></span>$ bitbake zlib <span class="c1">#target 为 zlib</span>
+</pre></div>
+
+
+<p>这是服务端会调用<code>buildTarget</code>作为如何，该函数如下:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">buildTargets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attempt to build the targets specified</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">buildTargetsIdle</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">abort</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">abort</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">state</span><span class="o">.</span><span class="n">forceshutdown</span><span class="p">:</span>
+            <span class="n">rq</span><span class="o">.</span><span class="n">finish_runqueue</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Forced shutdown&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">state</span><span class="o">.</span><span class="n">shutdown</span><span class="p">:</span>
+            <span class="n">rq</span><span class="o">.</span><span class="n">finish_runqueue</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Stopped build&quot;</span>
+        <span class="n">failures</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">rq</span><span class="o">.</span><span class="n">execute_runqueue</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">runqueue</span><span class="o">.</span><span class="n">TaskFailure</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">failures</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="o">.</span><span class="n">finishAsyncCommand</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">retval</span><span class="p">:</span>
+            <span class="n">bb</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">BuildCompleted</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rq</span><span class="o">.</span><span class="n">rqdata</span><span class="o">.</span><span class="n">runq_fnid</span><span class="p">),</span> <span class="n">buildname</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">failures</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="o">.</span><span class="n">finishAsyncCommand</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">retval</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="n">retval</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">buildSetVars</span><span class="p">()</span>
+
+    <span class="n">taskdata</span><span class="p">,</span> <span class="n">runlist</span><span class="p">,</span> <span class="n">fulltargetlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildTaskData</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+
+    <span class="n">buildname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">getVar</span><span class="p">(</span><span class="s2">&quot;BUILDNAME&quot;</span><span class="p">)</span>
+    <span class="n">bb</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">BuildStarted</span><span class="p">(</span><span class="n">buildname</span><span class="p">,</span> <span class="n">fulltargetlist</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">rq</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">runqueue</span><span class="o">.</span><span class="n">RunQueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipecache</span><span class="p">,</span> <span class="n">taskdata</span><span class="p">,</span> <span class="n">runlist</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;universe&#39;</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+        <span class="n">rq</span><span class="o">.</span><span class="n">rqdata</span><span class="o">.</span><span class="n">warn_multi_bb</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">server_register_idlecallback</span><span class="p">(</span><span class="n">buildTargetsIdle</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+</pre></div>
+
+
+<p>可以看到，这个函数做了以下几件事：</p>
+<ol>
+<li>定义了一个内嵌函数<code>buildTargetsIdle</code>，看名字可以得知，该内嵌函数会作为<code>idle</code>函数被注册到<code>server</code>中，周期的被调用</li>
+<li><code>self.buildSetVars()</code>用于设置一些和<code>BUILDNAME</code>,<code>BUILDTIME</code>等变量</li>
+<li><code>buildTaskData</code>用于生成任务数据，其中包括<code>taskdata</code>，<code>runlist</code>，和<code>fulltargetlist</code>；其中，<code>taskdata</code>是一个<code>bb.taskdata.TaskData</code>类的实例，这个对象中包含了和该任务相关的信息，例如依赖，任务名等，<code>runlist</code>则是该任务的各个目标的名称和对应的task，并以列表的形式进行存储，例如<code>["base-files","do_build"]</code>就代表了目标<code>base-files</code>，其task为<code>do_build</code>，而<code>fulltargetlist</code>则是所有target的列表</li>
+<li>通过<code>rq = bb.runqueue.RunQueue(self, self.data, self.recipecache, taskdata, runlist)</code>来构造一个<code>RunQueue</code>实例，为随后的build工作做好准备</li>
+<li>将定义的内嵌函数注册为<code>idle</code>回调函数，使其被周期地调用，因此，我们需要分析该函数的实现：</li>
+</ol>
+<h3>buildTargetsIdle</h3>
+<ol>
+<li>
+<p>根据上面的代码，该函数主要执行了<code>rq.execute_runqueue()</code>函数，该函数位于<code>bb/runqueue.py</code>中，而<code>execute_runqueue()</code>又调用了<code>_execute_runqueue()</code>，而<code>_execute_runqueue()</code>的实际工作，是根据<code>runqueue</code>的实际状态，进行不同的行为：</p>
+<ul>
+<li>在<code>runQueuePrepare</code>态，调用<code>bb.runqueue.RunQueueData.prepare()</code>，这个函数是很相当长的函数，主要行为包括：<ol>
+<li>STEP A:解析出一个需要执行的任务列表，包括解析依赖</li>
+<li>STEP B:标记所有需要执行的任务</li>
+<li>STEP C:去掉不需要执行的任务</li>
+<li>STEP D:检测并确定最终的需要执行的任务列表</li>
+<li>进入<code>runQueueSceneInit</code>状态</li>
+</ol>
+</li>
+<li>在<code>runQueueSceneInit</code>状态，调用<code>runqueue.start_worker()</code>启动，启动工作进程，并构建一个<code>RunQueueExecuteScenequeue</code>对象，将状态设置为<code>runQueueSceneRun</code></li>
+<li>在<code>runQueueSceneRun</code>状态，调用<code>RunQueueExecuteScenequeue.execute()</code>，该函数会将准备好的task依次运行，随后，将状态设置为<code>runQueueRunInit</code></li>
+<li>在<code>runQueueRunInit</code>状态，会构造一个<code>RunQueueExecuteTasks</code>对象，然后将状态设置为<code>runQueueRunning</code></li>
+<li>在<code>runQueueRunning</code>状态，会调用<code>RunQueueExecuteTasks</code>对象的<code>execute()</code>函数，该函数会执行在上面的<code>RunQueueData</code>状态中准备的task，并进入<code>runQueueCleanUp</code>状态</li>
+<li><code>runQueueCleanUp</code>状态，调用<code>RunQueueExecute.finish()</code>函数，并将状态设置为<code>runQueueComplete</code></li>
+<li><code>runQueueComplete</code>状态，销毁worker，然后该函数返回</li>
+</ul>
+</li>
+</ol>
+<h2>载入cache的入口</h2>
+<p>入口函数是<code>bb/cache.py</code>中的<code>load_cachefile()</code>函数</p>
+<h2>run.do_xxx 脚本如何生成</h2>
+<p>在<code>bb/build.py</code>中，存在<code>exec_func</code>函数，该函数运行的某个函数，将会在<code>build/tmp/work</code>中创建<code>run.do_xxx.pid</code>名称的脚本，并运行它</p>
+<h2>如何生成image</h2>
+<p>yocto在构建完成所有的软件包后，会将所有构建的软件包放在<code>${TMPDIR}/deploy</code>目录下，称之为软件源，在启动构建rootfs的活动（名为<code>do_rootfs</code>的task）后，将会执行三个函数：</p>
+<ul>
+<li>create_manifest() 构建软件包的manifest用于test image，并且生成一个<code>package</code>列表为<code>create_rootfs()</code>函数提供需要安装的软件包列表</li>
+<li>create_rootfs() 构建rootfs文件系统，包括执行<code>pre_cmd</code>，安装所需软件包，构建/etc ,/dev等目录，构建内核模块，运行ldconfig等，完成rootfs的构建</li>
+<li>create_image 根据image的压缩类型和文件系统类型，制作一个或多个image</li>
+</ul>
+  </div>
+  <div class="tag-cloud">
+    <p>
+      <a href="http://pkking.github.com/tag/python.html">python</a>
+      <a href="http://pkking.github.com/tag/yocto.html">Yocto</a>
+    </p>
+  </div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'lcrpkking';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</article>
+
+    <footer>
+        <p>&copy; lichaoran </p>
+<p>Built using <a href="http://getpelican.com" target="_blank">Pelican</a> - <a href="https://github.com/alexandrevicenzi/flex" target="_blank">Flex</a> theme by <a href="http://alexandrevicenzi.com" target="_blank">Alexandre Vicenzi</a></p>    </footer>
+  </main>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "BlogPosting",
+  "name": "Yocto源码分析",
+  "headline": "Yocto源码分析",
+  "datePublished": "2015-03-11 19:30:00+08:00",
+  "dateModified": "",
+  "author": {
+    "@type": "Person",
+    "name": "lichaoran",
+    "url": "http://pkking.github.com/author/lichaoran.html"
+  },
+  "image": "{{ SITEURL }}/{{ THEME_STATIC_DIR }}/img/profile.png",
+  "url": "http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/",
+  "description": "server如何运作 在bb/server/process.py中，定义了当Yocto采用多进程B/S架构时，server进程的启动方式： start_server()，在bin/bitbake中，包含了一个start_server()函数，该函数根据命令行参数，实例化相应的server对象，并且调用server的detach函数，这个函数则调用了server对象的start()函数 run():在bb.server.ProcessServer类中，存在一个run函数，该函数设置了一些UI事件，并且调用了bb.cooker.server_main()，该函数接受两个参数 ..."
+}
+</script></body>
+</html>

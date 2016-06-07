@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>WAAAGH!</title><link href="http://pkking.github.com/" rel="alternate"></link><link href="http://pkking.github.com/feeds/all.atom.xml" rel="self"></link><id>http://pkking.github.com/</id><updated>2015-05-12T19:37:00+08:00</updated><entry><title>关于在amd64架构下构建arm架构deb包的问题</title><link href="http://pkking.github.com/posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/" rel="alternate"></link><published>2015-05-12T19:37:00+08:00</published><author><name>lichaoran</name></author><id>tag:pkking.github.com,2015-05-12:posts/2015/May/12/guan-yu-zai-amd64jia-gou-xia-gou-jian-armjia-gou-debbao-de-wen-ti/</id><summary type="html">&lt;h1&gt;poky &amp;amp; yocto&lt;/h1&gt;
+&lt;p&gt;最近项目组在准备开发基于 &lt;code&gt;arm&lt;/code&gt;的版本，于是涉及到了交叉编译和交叉构建，前者很简单，只需要安装相应的arm-gcc即可。
+可惜生活往往不是如此简单，出于某些目的，我们需要构建基于ubuntu 中的源码和包管理机制构建的版本，也就是说，我们需要制作arm版本的ubuntu rootfs，之所以不能直接使用&lt;code&gt;ubuntu core for arm&lt;/code&gt;，是因为某些时候可能需要修改某些包的源码，所以需要同时搭建一个交叉编译和构建包的环境。&lt;/p&gt;
+&lt;p&gt;也就是一个 &lt;code&gt;src -&amp;gt; binary -&amp;gt; package&lt;/code&gt;的过程&lt;/p&gt;
+&lt;h3&gt;Yocto&lt;/h3&gt;
+&lt;p&gt;记得在实验室的时候，用&lt;code&gt;bitbake&lt;/code&gt;这个工具编译过arm下的用户态程序，于是google一番发现，bitbake原来是一个叫做Yocto的工具下的一个python写的工具集，用于将源码交叉构建为目标硬件的二进制程序（甚至软件包），遂大喜，下了最新的yocto之后，根据官方的 Quick Start迅速构建了一个img&lt;/p&gt;
+&lt;p&gt;不过转念一想，既然要基于ubuntu的源码，那么yocto中所带的源码则显然无法使用了，因为yocto虽然也能制作deb包，不过和ubuntu中的版本完全无法兼容，并且ubuntu对上游源码所打的一些补丁yocto也没有集成，因此可能需要对yocto进行一番改造。&lt;/p&gt;
+&lt;h3&gt;放弃&lt;/h3&gt;
+&lt;p&gt;参考了yocto的文档后，我们发现，yocto实现deb包的机制和通常的debian/ubuntu构建流程不太一样，后者使用dpkg-buildpackage来构建特定的包，而yocto则采用了自己实现的机制（&lt;code&gt;lib/pm.py&lt;/code&gt;利用dpkg apt等工具实现了自己的打包流程）这导致其构建包的流程几乎不透明了，而要通过修改yocto来达到生成特定版本ubuntu兼容的deb包，则可以预见包含比较大的工作量。&lt;/p&gt;
+&lt;p&gt;故此，yocto的路线暂停，而这里的主要问题是，ubuntu的rootfs是一个基于二进制包的img，我们只需要找到一种方法，能够将上游源码构建为某个版本apt能够识别、安装的包即可，有了这些包，构建rootfs就再轻松不过了&lt;/p&gt;
+&lt;h1&gt;sbuild&lt;/h1&gt;
+&lt;p&gt;在yocto的方案受挫后，我们发现，其主要的问题在于如何将交叉编译生成的二进制文件打包成软件包，经过一番搜索后，cross-build映入了我们眼帘。在看完：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://wiki.ubuntu.com/CrossBuilding"&gt;这篇&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossBuilding"&gt;这篇&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossbuildingQuickStart"&gt;这篇&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;等文后，总结出一个结论：妈蛋交叉构建还是个坑啊，大家要构建最好把源码传到&lt;code&gt;launchpad&lt;/code&gt;上啊，我们建议大家构建的时候用最新的工具链哟，也欢迎搭建帮忙一起测试sbuild和那些个坑爹的package 维护者挖的坑 （逃&lt;/p&gt;
+&lt;p&gt;不过第一篇文中，同时也表示业界在crossbuild的泥潭里正缓慢的前行，那么之前的ubuntu for arm版本又是如何构建出来的呢？？&lt;/p&gt;
+&lt;h3&gt;crossBuild node&lt;/h3&gt;
+&lt;p&gt;这里就要请出&lt;a href="https://launchpad.net/ubuntu"&gt;launchpad&lt;/a&gt;了，根据&lt;a href="http://comments.gmane.org/gmane.linux.embedded.yocto.general/15379"&gt;这篇文章&lt;/a&gt;，可以得知，ubuntu基本是采用launchpad的分布式构建结点来制作软件包的，并且他们还是用的最慢的本地构建方法（也就是利用&lt;code&gt;qemu-static-user&lt;/code&gt;软件包，在amd64的虚拟机上构建arm环境，然后用arm架构的工具构建软件包），事实上，launchpad的[这篇文章]也是这么说的(https://help.launchpad.net/Packaging/PPA)。&lt;/p&gt;
+&lt;p&gt;既然如此，那我们何不自己搞一发本地构建？&lt;/p&gt;
+&lt;p&gt;于是跟随者这篇&lt;a href="https://wiki.ubuntu.com/SimpleSbuild"&gt;guide&lt;/a&gt; 我们搭建了一个 host,build,target都是armhf的chroot环境（前面的教程搭建的是基于amd64的sbuild chroot，只需要在mk-sbuild和sbuild的时候，将--arch=armhf加入命令行即可），然后就可以轻松的在amd64下构建arm软件包了&lt;/p&gt;
+&lt;h1&gt;buildd&lt;/h1&gt;
+&lt;h3&gt;问题&lt;/h3&gt;
+&lt;p&gt;用sbuild构建了一些包之后，发现，我们的日志和launchpad上的build.log并不一样，launchpad似乎使用了一个叫做buildd的工具来进行自动化的构建，google一番之后，发现了&lt;a href="https://www.debian.org/devel/buildd/"&gt;这篇文章&lt;/a&gt;，原来launchpad利用&lt;code&gt;wanna-build buildd sbuild&lt;/code&gt;构建了一套自动化构建环境，buildd周期性的检查upload上来的源码包，而wanna-build则维护了一个包含各个软件包在各个架构上的构建状态的数据库，buildd通过数据库来选择是否重新构建（如果该包当前状态是未成功构建或超过包的保质期）或者忽略本次构建（包已经构建成功并且在保质期内），而最终的构建工具，则是sbuild&lt;/p&gt;
+&lt;h3&gt;还是sbuild&lt;/h3&gt;
+&lt;p&gt;最终真相大白，虽然我们可能没有资源架设&lt;code&gt;openstack集群&lt;/code&gt;来进行分布式构建，但是只要采用和launchpad一样策略：使用sbuild构建各个架构的软件包，也是毫无问题的。&lt;/p&gt;
+&lt;p&gt;最后，送上利用sbuild从零构建arm等架构软件包的&lt;a href="https://wiki.debian.org/sbuild"&gt;官方教程&lt;/a&gt;&lt;/p&gt;
+&lt;h1&gt;参考文献：&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;https://wiki.debian.org/sbuild&lt;/li&gt;
+&lt;li&gt;https://wiki.ubuntu.com/SimpleSbuild&lt;/li&gt;
+&lt;li&gt;https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/UsingMultiArch&lt;/li&gt;
+&lt;li&gt;https://wiki.ubuntu.com/CrossBuilding&lt;/li&gt;
+&lt;li&gt;https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossBuilding&lt;/li&gt;
+&lt;li&gt;https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossbuildingQuickStart&lt;/li&gt;
+&lt;li&gt;http://comments.gmane.org/gmane.linux.embedded.yocto.general/15379&lt;/li&gt;
+&lt;li&gt;https://help.launchpad.net/Packaging/PPA&lt;/li&gt;
+&lt;li&gt;https://www.debian.org/devel/buildd/&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="ubuntu"></category><category term="sbuild"></category><category term="arm"></category><category term="crossBuild"></category></entry><entry><title>Yocto源码分析</title><link href="http://pkking.github.com/posts/2015/Mar/11/yoctoyuan-ma-fen-xi/" rel="alternate"></link><published>2015-03-11T19:30:00+08:00</published><author><name>lichaoran</name></author><id>tag:pkking.github.com,2015-03-11:posts/2015/Mar/11/yoctoyuan-ma-fen-xi/</id><summary type="html">&lt;h2&gt;server如何运作&lt;/h2&gt;
+&lt;p&gt;在&lt;code&gt;bb/server/process.py&lt;/code&gt;中，定义了当Yocto采用多进程&lt;code&gt;B/S&lt;/code&gt;架构时，&lt;code&gt;server&lt;/code&gt;进程的启动方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;start_server()&lt;/code&gt;，在&lt;code&gt;bin/bitbake&lt;/code&gt;中，包含了一个&lt;code&gt;start_server()&lt;/code&gt;函数，该函数根据命令行参数，实例化相应的&lt;code&gt;server&lt;/code&gt;对象，并且调用&lt;code&gt;server&lt;/code&gt;的&lt;code&gt;detach&lt;/code&gt;函数，这个函数则调用了&lt;code&gt;server&lt;/code&gt;对象的&lt;code&gt;start()&lt;/code&gt;函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;run()&lt;/code&gt;:在&lt;code&gt;bb.server.ProcessServer&lt;/code&gt;类中，存在一个&lt;code&gt;run&lt;/code&gt;函数，该函数设置了一些UI事件，并且调用了&lt;code&gt;bb.cooker.server_main()&lt;/code&gt;，该函数接受两个参数，第一个是一个cooker实例，第二个是一个可执行的函数，Yocto中将&lt;code&gt;self.cooker&lt;/code&gt;和&lt;code&gt;self.main&lt;/code&gt;作为这两个参数，由于&lt;code&gt;ProcessServer&lt;/code&gt;类继承于&lt;code&gt;Process&lt;/code&gt;类，因此在调用该类的&lt;code&gt;start()&lt;/code&gt;方法时，&lt;code&gt;run()&lt;/code&gt;会被自动调用，因此在调用&lt;code&gt;server.start()&lt;/code&gt;时，实际调用的是&lt;code&gt;server_main()&lt;/code&gt;函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;server_main()&lt;/code&gt;:该函数执行一些预处理任务（&lt;code&gt;bb.cooker.pre_serve()&lt;/code&gt;），然后调用传进来的函数并且返回其返回值:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/cooker.py&amp;#39;&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;server_main&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;pre_serve&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="c1"&gt;#something else&lt;/span&gt;
+         &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;post_serve&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;而这里的&lt;code&gt;func&lt;/code&gt;，即是上面传进来的&lt;code&gt;bb.server.ProcessServer.main&lt;/code&gt;，因此调用&lt;code&gt;server_main()&lt;/code&gt;实际上是调用了&lt;code&gt;ProcessServer&lt;/code&gt;类的&lt;code&gt;main()&lt;/code&gt;函数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ProcessServer.main()&lt;/code&gt;:该函数会执行一个重要的&lt;code&gt;while&lt;/code&gt;循环：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/server/process.py&amp;#39;&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="c1"&gt;# Ignore SIGINT within the server, as all SIGINT handling is done by&lt;/span&gt;
+    &lt;span class="c1"&gt;# the UI and communicated to us&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitin&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SIGINT&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SIG_IGN&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt; &lt;span class="c1"&gt;# 检测是否有命令数据&lt;/span&gt;
+                &lt;span class="n"&gt;command&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recv&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recv&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+                &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+    &lt;span class="c1"&gt;# 若无数据可读，执行注册的idle命令&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;idle_commands&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_reader&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quitout&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exception&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Running command &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;unregister_UIHhandler&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event_handle&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command_channel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;shutdown&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;在其中不断的从两个管道中读取数据，一个管道为命令管道，这个管道两头连接着&lt;code&gt;ui&lt;/code&gt;和&lt;code&gt;server&lt;/code&gt;，这样server就可以接受来自&lt;code&gt;ui&lt;/code&gt;的命令，并把执行结果返回给&lt;code&gt;ui&lt;/code&gt;；另一个管道为异常管道，当其他模块在产生不可恢复的异常后，会向这个管道发送&lt;code&gt;'quit'&lt;/code&gt;消息，接收到该命令后主循环直接退出；在检查完这两个管道后，主循环调用&lt;code&gt;idle_commands()&lt;/code&gt;，并设置0.1秒的延时，用于等待几个管道的数据&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;idle_commands&lt;/code&gt;：该函数调用&lt;code&gt;register_idle_function&lt;/code&gt;函数注册的&lt;code&gt;idle&lt;/code&gt;函数，这个函数在&lt;code&gt;bb.Command.runCommand()&lt;/code&gt;中，通过&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;server_register_idlecallback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommands&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cooker&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;这段代码注册，可以看到，注册的函数为`bb.cooker.runCommands`，然后该函数调用这个注册的函数，如果未找到注册函数，则调用`select.select()`等待0.1秒后返回。
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bb.cooker.runCommands&lt;/code&gt;:该函数就是被注册的idle函数，他会被&lt;code&gt;server&lt;/code&gt;主循环周期的调用，而该函数的实际内容，则是调用&lt;code&gt;bb.command.Command.runAsyncCommand&lt;/code&gt;来执行一个已经就绪的异步命令&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bb.command.Command.runAsyncCommand&lt;/code&gt;:该函数会判断当前cooker从状态，而分别调用&lt;code&gt;updateCache()&lt;/code&gt;函数或者调用&lt;code&gt;command&lt;/code&gt;对象的&lt;code&gt;currentAsyncCommand&lt;/code&gt;成员函数，这个函数会在多种情况下被赋值为某个函数对象和其参数组成的元组&lt;code&gt;(command, options)&lt;/code&gt;，当该函数被调用时，则会执行在&lt;code&gt;currentAsyncCommand&lt;/code&gt;注册的函数，而&lt;code&gt;updateCache()&lt;/code&gt;则会为启动其他的任务，例如&lt;code&gt;parse&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;currentAsyncCommand&lt;/code&gt;的赋值：&lt;code&gt;currentAsyncCommand&lt;/code&gt;只会在&lt;code&gt;command.runCommand&lt;/code&gt;函数中被赋值，而&lt;code&gt;command.runCommand&lt;/code&gt;函数，则会在&lt;code&gt;server&lt;/code&gt;对象的&lt;code&gt;runCommand()&lt;/code&gt;中被调用，&lt;code&gt;server.runCommand()&lt;/code&gt;的调用，则出现在&lt;code&gt;ui&lt;/code&gt;端的&lt;code&gt;main()&lt;/code&gt;中唯一一次主动调用&lt;code&gt;server&lt;/code&gt;的代码，这样，即是在&lt;code&gt;ui&lt;/code&gt;端的&lt;code&gt;main&lt;/code&gt;函数中，启动了&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;依赖关系如何解析&lt;/h2&gt;
+&lt;p&gt;代码位于&lt;code&gt;bb.runqueue.RunQueueData.prepare()&lt;/code&gt;函数中的注释的&lt;code&gt;PART A&lt;/code&gt;部分和内嵌函数&lt;code&gt;generate_recdeps&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;bb文件如何解析&lt;/h2&gt;
+&lt;p&gt;入口位于&lt;code&gt;bb.cooker.updateCache()&lt;/code&gt;函数中，该函数中有如下代码：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parser&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;CookerParser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;filelist&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;masked&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这段代码初始化了一个&lt;code&gt;CookerParser&lt;/code&gt;对象，这个对象的构造函数中，调用了&lt;code&gt;self.start()&lt;/code&gt;，因此这段代码直接启动了bb文件的解析，具体的&lt;code&gt;start()&lt;/code&gt;函数代码在&lt;code&gt;bb/cooker.py&lt;/code&gt;中的&lt;code&gt;CookerParser&lt;/code&gt;类中&lt;/p&gt;
+&lt;h2&gt;UI端如何运作&lt;/h2&gt;
+&lt;p&gt;由于在Yocto中，服务进程先于UI启动，因此第一次执行命令需要通过&lt;code&gt;ui&lt;/code&gt;传递给&lt;code&gt;server&lt;/code&gt;，而&lt;code&gt;ui&lt;/code&gt;的入口函数，则是位于&lt;code&gt;lib/ui/ui_module_name.py&lt;/code&gt;文件中的&lt;code&gt;main()&lt;/code&gt;函数，根据采用的不同的&lt;code&gt;ui&lt;/code&gt;模块（默认采用knotty.py），&lt;code&gt;main&lt;/code&gt;函数有不同的行为，这里以knotty.py中的main作为例子进行分析&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bb.ui.knotty.main&lt;/code&gt; 这个函数为&lt;code&gt;ui&lt;/code&gt;端的入口函数，最核心的代码为&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="c1"&gt;#__file__ = &amp;#39;bitbake/lib/bb/ui/knotty.py&amp;#39;&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;observe_only&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;updateFromServer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;updateToServer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;cmdline&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parseActions&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Nothing to do.  Use &amp;#39;bitbake world&amp;#39; to build everything, or run &amp;#39;bitbake --help&amp;#39; for usage information.&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;msg&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+
+        &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;action&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Command &amp;#39;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;#39; failed: &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+        &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;logger&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Command &amp;#39;&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;#39; failed: returned &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cmdline&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这段代码，通过&lt;code&gt;params.parseActions()&lt;/code&gt;从用户调用的&lt;code&gt;bitbake &amp;lt;target&amp;gt;&lt;/code&gt;命令，解析出一个&lt;code&gt;cmdline&lt;/code&gt;字典，其中的&lt;code&gt;action&lt;/code&gt;键是一个列表，其中包含了要运行的命令的字符串格式，要构建的目标&lt;code&gt;&amp;lt;target&amp;gt;&lt;/code&gt;和构建的cmd（默认为&lt;code&gt;build&lt;/code&gt;），例如:&lt;code&gt;cmdline[action]=["buildTarget", "zlib", "build"]&lt;/code&gt;，就意味着即将要运行的命令为&lt;code&gt;buildTarget&lt;/code&gt;，构建目标为&lt;code&gt;zlib&lt;/code&gt;，cmd为&lt;code&gt;build&lt;/code&gt;；而&lt;code&gt;msg&lt;/code&gt;键对应了需要传送给&lt;code&gt;server&lt;/code&gt;端显示的消息，当命令行参数解析到不合适的内容时，则会发送给服务器结束命令，关闭&lt;code&gt;ui&lt;/code&gt;和&lt;code&gt;server&lt;/code&gt;进程。
+    如果没有出错，通常的第一个&lt;code&gt;action&lt;/code&gt;都是&lt;code&gt;buildTarget&lt;/code&gt;，这个&lt;code&gt;action&lt;/code&gt;随后被作为参数，传给&lt;code&gt;bb.server.ServerCommunicator.runCommand()&lt;/code&gt;函数，该函数调用服务端的函数&lt;code&gt;bb.server.ProcessServer.runCommand&lt;/code&gt;来执行命令&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;bb.server.ProcessServer.runCommand&lt;/code&gt;:该函数将上面&lt;code&gt;action&lt;/code&gt;中的命令数据通过&lt;code&gt;bb.cooker.command.runCommand()&lt;/code&gt;进行处理，并将返回值通过管道发送给&lt;code&gt;ui&lt;/code&gt;端，这也是唯一一次&lt;code&gt;ui&lt;/code&gt;端显式的调用&lt;code&gt;server&lt;/code&gt;的函数。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;各种event的处理：在&lt;code&gt;bb.ui.knotty.main()&lt;/code&gt;中，存在着一个&lt;code&gt;while&lt;/code&gt;循环，该循环读取服务端的管道，并根据服务端返回的命令执行结果和状态执行相应的代码，或者关闭服务端，或者继续发送命令。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;buildTarget&lt;/h2&gt;
+&lt;p&gt;在 &lt;code&gt;bitbake/bb/cooker.py&lt;/code&gt;中，有一个&lt;code&gt;buildTarget&lt;/code&gt;函数，该函数为在无任何参数的&lt;code&gt;bitbake&lt;/code&gt;命令时的服务端入口，例如:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ bitbake zlib &lt;span class="c1"&gt;#target 为 zlib&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这是服务端会调用&lt;code&gt;buildTarget&lt;/code&gt;作为如何，该函数如下:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;buildTargets&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+     &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;    Attempt to build the targets specified&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;buildTargetsIdle&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;abort&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;abort&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;forceshutdown&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finish_runqueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Forced shutdown&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;shutdown&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finish_runqueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;msg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Stopped build&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;failures&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execute_runqueue&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="n"&gt;runqueue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TaskFailure&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;failures&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;SystemExit&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;exc&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finishAsyncCommand&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BuildCompleted&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rqdata&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runq_fnid&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;buildname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;failures&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;command&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finishAsyncCommand&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;msg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;retval&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;buildSetVars&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="n"&gt;taskdata&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;runlist&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fulltargetlist&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;buildTaskData&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;abort&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;buildname&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getVar&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;BUILDNAME&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fire&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BuildStarted&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;buildname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fulltargetlist&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;rq&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;bb&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;runqueue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RunQueue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recipecache&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;taskdata&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;runlist&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;universe&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;targets&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rqdata&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;warn_multi_bb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;configuration&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;server_register_idlecallback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;buildTargetsIdle&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rq&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;可以看到，这个函数做了以下几件事：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;定义了一个内嵌函数&lt;code&gt;buildTargetsIdle&lt;/code&gt;，看名字可以得知，该内嵌函数会作为&lt;code&gt;idle&lt;/code&gt;函数被注册到&lt;code&gt;server&lt;/code&gt;中，周期的被调用&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;self.buildSetVars()&lt;/code&gt;用于设置一些和&lt;code&gt;BUILDNAME&lt;/code&gt;,&lt;code&gt;BUILDTIME&lt;/code&gt;等变量&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;buildTaskData&lt;/code&gt;用于生成任务数据，其中包括&lt;code&gt;taskdata&lt;/code&gt;，&lt;code&gt;runlist&lt;/code&gt;，和&lt;code&gt;fulltargetlist&lt;/code&gt;；其中，&lt;code&gt;taskdata&lt;/code&gt;是一个&lt;code&gt;bb.taskdata.TaskData&lt;/code&gt;类的实例，这个对象中包含了和该任务相关的信息，例如依赖，任务名等，&lt;code&gt;runlist&lt;/code&gt;则是该任务的各个目标的名称和对应的task，并以列表的形式进行存储，例如&lt;code&gt;["base-files","do_build"]&lt;/code&gt;就代表了目标&lt;code&gt;base-files&lt;/code&gt;，其task为&lt;code&gt;do_build&lt;/code&gt;，而&lt;code&gt;fulltargetlist&lt;/code&gt;则是所有target的列表&lt;/li&gt;
+&lt;li&gt;通过&lt;code&gt;rq = bb.runqueue.RunQueue(self, self.data, self.recipecache, taskdata, runlist)&lt;/code&gt;来构造一个&lt;code&gt;RunQueue&lt;/code&gt;实例，为随后的build工作做好准备&lt;/li&gt;
+&lt;li&gt;将定义的内嵌函数注册为&lt;code&gt;idle&lt;/code&gt;回调函数，使其被周期地调用，因此，我们需要分析该函数的实现：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;buildTargetsIdle&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;根据上面的代码，该函数主要执行了&lt;code&gt;rq.execute_runqueue()&lt;/code&gt;函数，该函数位于&lt;code&gt;bb/runqueue.py&lt;/code&gt;中，而&lt;code&gt;execute_runqueue()&lt;/code&gt;又调用了&lt;code&gt;_execute_runqueue()&lt;/code&gt;，而&lt;code&gt;_execute_runqueue()&lt;/code&gt;的实际工作，是根据&lt;code&gt;runqueue&lt;/code&gt;的实际状态，进行不同的行为：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在&lt;code&gt;runQueuePrepare&lt;/code&gt;态，调用&lt;code&gt;bb.runqueue.RunQueueData.prepare()&lt;/code&gt;，这个函数是很相当长的函数，主要行为包括：&lt;ol&gt;
+&lt;li&gt;STEP A:解析出一个需要执行的任务列表，包括解析依赖&lt;/li&gt;
+&lt;li&gt;STEP B:标记所有需要执行的任务&lt;/li&gt;
+&lt;li&gt;STEP C:去掉不需要执行的任务&lt;/li&gt;
+&lt;li&gt;STEP D:检测并确定最终的需要执行的任务列表&lt;/li&gt;
+&lt;li&gt;进入&lt;code&gt;runQueueSceneInit&lt;/code&gt;状态&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueSceneInit&lt;/code&gt;状态，调用&lt;code&gt;runqueue.start_worker()&lt;/code&gt;启动，启动工作进程，并构建一个&lt;code&gt;RunQueueExecuteScenequeue&lt;/code&gt;对象，将状态设置为&lt;code&gt;runQueueSceneRun&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueSceneRun&lt;/code&gt;状态，调用&lt;code&gt;RunQueueExecuteScenequeue.execute()&lt;/code&gt;，该函数会将准备好的task依次运行，随后，将状态设置为&lt;code&gt;runQueueRunInit&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueRunInit&lt;/code&gt;状态，会构造一个&lt;code&gt;RunQueueExecuteTasks&lt;/code&gt;对象，然后将状态设置为&lt;code&gt;runQueueRunning&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;runQueueRunning&lt;/code&gt;状态，会调用&lt;code&gt;RunQueueExecuteTasks&lt;/code&gt;对象的&lt;code&gt;execute()&lt;/code&gt;函数，该函数会执行在上面的&lt;code&gt;RunQueueData&lt;/code&gt;状态中准备的task，并进入&lt;code&gt;runQueueCleanUp&lt;/code&gt;状态&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;runQueueCleanUp&lt;/code&gt;状态，调用&lt;code&gt;RunQueueExecute.finish()&lt;/code&gt;函数，并将状态设置为&lt;code&gt;runQueueComplete&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;runQueueComplete&lt;/code&gt;状态，销毁worker，然后该函数返回&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;载入cache的入口&lt;/h2&gt;
+&lt;p&gt;入口函数是&lt;code&gt;bb/cache.py&lt;/code&gt;中的&lt;code&gt;load_cachefile()&lt;/code&gt;函数&lt;/p&gt;
+&lt;h2&gt;run.do_xxx 脚本如何生成&lt;/h2&gt;
+&lt;p&gt;在&lt;code&gt;bb/build.py&lt;/code&gt;中，存在&lt;code&gt;exec_func&lt;/code&gt;函数，该函数运行的某个函数，将会在&lt;code&gt;build/tmp/work&lt;/code&gt;中创建&lt;code&gt;run.do_xxx.pid&lt;/code&gt;名称的脚本，并运行它&lt;/p&gt;
+&lt;h2&gt;如何生成image&lt;/h2&gt;
+&lt;p&gt;yocto在构建完成所有的软件包后，会将所有构建的软件包放在&lt;code&gt;${TMPDIR}/deploy&lt;/code&gt;目录下，称之为软件源，在启动构建rootfs的活动（名为&lt;code&gt;do_rootfs&lt;/code&gt;的task）后，将会执行三个函数：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;create_manifest() 构建软件包的manifest用于test image，并且生成一个&lt;code&gt;package&lt;/code&gt;列表为&lt;code&gt;create_rootfs()&lt;/code&gt;函数提供需要安装的软件包列表&lt;/li&gt;
+&lt;li&gt;create_rootfs() 构建rootfs文件系统，包括执行&lt;code&gt;pre_cmd&lt;/code&gt;，安装所需软件包，构建/etc ,/dev等目录，构建内核模块，运行ldconfig等，完成rootfs的构建&lt;/li&gt;
+&lt;li&gt;create_image 根据image的压缩类型和文件系统类型，制作一个或多个image&lt;/li&gt;
+&lt;/ul&gt;</summary><category term="python"></category><category term="Yocto"></category></entry><entry><title>利用pelican和gitcafe搭建博客</title><link href="http://pkking.github.com/posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/" rel="alternate"></link><published>2015-02-18T19:30:00+08:00</published><author><name>lichaoran</name></author><id>tag:pkking.github.com,2015-02-18:posts/2015/Feb/18/li-yong-pelicanhe-gitcafeda-jian-bo-ke/</id><summary type="html">&lt;h2&gt;介绍&lt;/h2&gt;
+&lt;p&gt;pelican是基于python的静态web站点生成器，由python编写
+目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;文档详见&lt;a href="http://docs.getpelican.com/"&gt;pelican&lt;/a&gt;，本文基于pelican 3.5.0版本&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/getpelican/pelican"&gt;源码&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;特性：&lt;ul&gt;
+&lt;li&gt;支持markdown，html和rst&lt;/li&gt;
+&lt;li&gt;支持各种主题&lt;a href="https://github.com/getpelican/pelican-themes"&gt;theme&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;支持插件&lt;/li&gt;
+&lt;li&gt;代码高亮&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;gitcafe pages&lt;/h2&gt;
+&lt;p&gt;gitcafe pages是类似于github pages的服务，不过国内访问速度更良心&lt;/p&gt;
+&lt;h3&gt;WHY gitcafe&lt;/h3&gt;
+&lt;p&gt;github大法好，不过国内的访问速度令人蛋碎，当然，如果是海外党，可能恰好相反，不过如果有米，当然最好能够买一个域名，然后通过CNAME将国外和国内IP分别引导到github pages和gitcafe pages，具体做法可以参见&lt;a href="https://ruby-china.org/topics/18084"&gt;该文&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;QuickStart&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;在centos 7下，首先安装python，pip，virtualenv（可选,virtualenv可以将各种库，插件和主题打包到一起，比较方便）&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;yum install -y python python-devel python-libs python-pip
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;随后安装pelican和markdown库，如果需要建立虚拟环境(virtualenv)，则可以参见&lt;a href="https://virtualenv.pypa.io/en/latest"&gt;该文&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;pip install pelican markdown
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;建立一个存放博客的目录，并进入目录，取名'waaagh'（绿皮万岁)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;mkdir -p waaagh
+cd waaagh
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;QuickStart，运行：
+&lt;code&gt;pelican-quickstart&lt;/code&gt;，根据提示，可以快速生成一个静态页面的生产环境，例如:（输入不支持backspace键，不过输入错误可以在随后生成的&lt;code&gt;pelicanconf.py&lt;/code&gt;文件中修改，直接按回车则是取默认值）&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;blog&lt;span class="o"&gt;)[&lt;/span&gt;root@localhost waaagh&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="c1"&gt;# pelican-quickstart &lt;/span&gt;
+Welcome to pelican-quickstart v3.5.0.
+
+This script will &lt;span class="nb"&gt;help&lt;/span&gt; you create a new Pelican-based website.
+
+Please answer the following questions so this script can generate the files
+needed by Pelican.
+
+
+&amp;gt; Where &lt;span class="k"&gt;do&lt;/span&gt; you want to create your new web site? &lt;span class="o"&gt;[&lt;/span&gt;.&lt;span class="o"&gt;]&lt;/span&gt; .
+&amp;gt; What will be the title of this web site? waaagh!!!
+&amp;gt; Who will be the author of this web site? lichaoran
+&amp;gt; What will be the default language of this web site? &lt;span class="o"&gt;[&lt;/span&gt;en&lt;span class="o"&gt;]&lt;/span&gt; zh
+&amp;gt; Do you want to specify a URL prefix? e.g., http://example.com   &lt;span class="o"&gt;(&lt;/span&gt;Y/n&lt;span class="o"&gt;)&lt;/span&gt; yes
+&amp;gt; Do you want to specify a URL prefix? e.g., http://example.com   &lt;span class="o"&gt;(&lt;/span&gt;Y/n&lt;span class="o"&gt;)&lt;/span&gt; yes
+&amp;gt; What is your URL prefix? &lt;span class="o"&gt;(&lt;/span&gt;see above example&lt;span class="p"&gt;;&lt;/span&gt; no trailing slash&lt;span class="o"&gt;)&lt;/span&gt; pkking
+&amp;gt; Do you want to &lt;span class="nb"&gt;enable&lt;/span&gt; article pagination? &lt;span class="o"&gt;(&lt;/span&gt;Y/n&lt;span class="o"&gt;)&lt;/span&gt; y
+  How many articles per page &lt;span class="k"&gt;do&lt;/span&gt; you want? &lt;span class="o"&gt;[&lt;/span&gt;10&lt;span class="o"&gt;]&lt;/span&gt; 
+▽ Do you want to generate a Fabfile/Makefile to automate generation and publishing? &lt;span class="o"&gt;(&lt;/span&gt;Y/n&lt;span class="o"&gt;)&lt;/span&gt; y
+&amp;gt; Do you want an auto-reload &lt;span class="p"&gt;&amp;amp;&lt;/span&gt; simpleHTTP script to assist with theme and site development? &lt;span class="o"&gt;(&lt;/span&gt;Y/n&lt;span class="o"&gt;)&lt;/span&gt; y
+&amp;gt; Do you want to upload your website using FTP? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; n
+&amp;gt; Do you want to upload your website using SSH? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; y
+&amp;gt; What is the hostname of your SSH server? &lt;span class="o"&gt;[&lt;/span&gt;localhost&lt;span class="o"&gt;]&lt;/span&gt; 
+&amp;gt; What is the port of your SSH server? &lt;span class="o"&gt;[&lt;/span&gt;22&lt;span class="o"&gt;]&lt;/span&gt; 
+&amp;gt; What is your username on that server? &lt;span class="o"&gt;[&lt;/span&gt;root&lt;span class="o"&gt;]&lt;/span&gt; pkking
+&amp;gt; Where &lt;span class="k"&gt;do&lt;/span&gt; you want to put your web site on that server? &lt;span class="o"&gt;[&lt;/span&gt;/var/www&lt;span class="o"&gt;]&lt;/span&gt; 
+&amp;gt; Do you want to upload your website using Dropbox? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; n
+&amp;gt; Do you want to upload your website using S3? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; n
+&amp;gt; Do you want to upload your website using Rackspace Cloud Files? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; n
+&amp;gt; Do you want to upload your website using GitHub Pages? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; y
+&amp;gt; Is this your personal page &lt;span class="o"&gt;(&lt;/span&gt;username.github.io&lt;span class="o"&gt;)&lt;/span&gt;? &lt;span class="o"&gt;(&lt;/span&gt;y/N&lt;span class="o"&gt;)&lt;/span&gt; 
+  Done. Your new project is available at /root/blog/blog
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;完成后，目录结构如下：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt; yourproject/
+├── content
+│   └── (pages)
+├── output
+├── develop_server.sh
+├── fabfile.py
+├── Makefile
+├── pelicanconf.py       # Main settings file
+└── publishconf.py       # Settings to use when ready to publish
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;push一篇博文&lt;/h2&gt;
+&lt;p&gt;通常，我们将content目录作为存放文章源文件的目录，pelican支持rst，markdown和html文件。
+不管3721，先撸一篇markdown文章吧：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    Title: 我的第一发博客
+    Date: 2015-01-01 
+    Category: Python
+    Tags: pelican, publishing
+    Slug: 第一篇博客
+    Authors: lichaoran
+    Summary: Hello World
+
+    hello world!
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;接下来，解释一下上面的文件内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;以:隔开的key-value键值对可以成为元素局（metadata），他们构成了一些文章的基础属性，例如日期，标题，摘要等，具体的元数据可以参看pelican文档&lt;/li&gt;
+&lt;li&gt;正文和metadata以空行隔开&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;写好文章后，将其命名为hello_world.md（.md为markdown源文件的后缀名），然后在project根目录运行&lt;code&gt;pelican /path/to/your/content/ [-s path/to/your/settings.py]&lt;/code&gt;，其中，&lt;code&gt;/path/to/your/content&lt;/code&gt;即是存放文章源文件的目录，刚才我们使用了content目录，该目录的名称可以在&lt;code&gt;pelicanconf.py&lt;/code&gt;中配置，甚至，输出目录&lt;code&gt;output&lt;/code&gt;都可以用其他配置文件代替，配置文件&lt;code&gt;pelicanconf.py&lt;/code&gt;也可以是其他的配置文件，只需要指定&lt;code&gt;path/to/your/settings.py&lt;/code&gt;即可。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TIPS&lt;/strong&gt;:
+写好文章后，利用刚才的命令，就已经生成好页面到&lt;code&gt;output&lt;/code&gt;目录了，这时可以利用&lt;code&gt;make serve&lt;/code&gt;命令启动一个本地服务器，通过访问&lt;code&gt;localhost.com:8000&lt;/code&gt;来访问生成的页面&lt;/p&gt;
+&lt;h2&gt;主题&lt;/h2&gt;
+&lt;p&gt;pelican支持各种主题，&lt;a href="http://pelicanthemes.com/"&gt;这里&lt;/a&gt;有各种主题及其下载链接，主题的安装和配置可以使用&lt;code&gt;pelican-theme&lt;/code&gt;工具，具体方法参见&lt;code&gt;pelican-theme --help&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;配置pelican&lt;/h2&gt;
+&lt;p&gt;配置文件&lt;code&gt;pelicanconf.py&lt;/code&gt;包括了众多选项，可以参见&lt;a href="http://docs.getpelican.com/en/3.5.0/settings.html"&gt;该页&lt;/a&gt;进行配置&lt;/p&gt;
+&lt;h2&gt;git端的配置&lt;/h2&gt;
+&lt;p&gt;在生成好第一篇文章后，可以进入到&lt;code&gt;output&lt;/code&gt;目录，这里的内容就是即将托管到&lt;code&gt;gitcafe pages&lt;/code&gt;的静态页面，首先，到gitcafe.com建立一个user pages或者project pages，方法参见&lt;a href="https://gitcafe.com/GitCafe/Help/wiki/Pages-%E7%9B%B8%E5%85%B3%E5%B8%AE%E5%8A%A9#wiki"&gt;官方帮助文档&lt;/a&gt;，简化下来的步骤就是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在gitcafe.com中建立一个和用户名相同的repo&lt;/li&gt;
+&lt;li&gt;根据刚建立的空repo首页，将git username和email配置为相应的数据（在github中，非验证邮箱和用户名会导致pages build failure，不知道gitcafe是否有一样的机制）&lt;/li&gt;
+&lt;li&gt;在&lt;code&gt;output&lt;/code&gt;目录，依次运行&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    git init &lt;span class="c1"&gt;#初始化仓库&lt;/span&gt;
+    git checkout -b gitcafe-pages &lt;span class="c1"&gt;#建立制定分支，pages只会渲染该分支中的页面&lt;/span&gt;
+    git add -A &lt;span class="c1"&gt;#添加修改&lt;/span&gt;
+    git commit -m&lt;span class="s2"&gt;&amp;quot;init the blog&amp;quot;&lt;/span&gt; &lt;span class="c1"&gt;#提交&lt;/span&gt;
+    git remote add gitcafe git@gitcafe.com:pkking/pkking.git &lt;span class="c1"&gt;#pkking替换为你的gitcafe用户名&lt;/span&gt;
+    git push gitcafe gitcafe-pages &lt;span class="c1"&gt;#将提交push到gitcafe&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ol&gt;
+&lt;li&gt;OK，一切就绪，访问pkking.gitcafe.io查看渲染好的页面吧&lt;/li&gt;
+&lt;/ol&gt;</summary><category term="python"></category><category term="pelican"></category><category term="gitcafe"></category><category term="博客"></category></entry></feed>
