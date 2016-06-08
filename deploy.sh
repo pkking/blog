@@ -44,7 +44,7 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     fi
     # Add, commit and push files
     git add -f . &&
-    git commit -m "Travis build $TRAVIS_BUILD_NUMBER pushed to Github Pages" &&
+    git commit -m "commit $TRAVIS_COMMIT pushed to Github Pages" &&
     git push -fq origin $BRANCH > /dev/null
     if [ $? -ne 0 ];then
 	    echo "fail to push pages to $TARGET_REPO"
