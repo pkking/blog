@@ -19,22 +19,16 @@ Date: 2015-05-12 19:37
 故此，yocto的路线暂停，而这里的主要问题是，ubuntu的rootfs是一个基于二进制包的img，我们只需要找到一种方法，能够将上游源码构建为某个版本apt能够识别、安装的包即可，有了这些包，构建rootfs就再轻松不过了
 
 # sbuild
-在yocto的方案受挫后，我们发现，其主要的问题在于如何将交叉编译生成的二进制文件打包成软件包，经过一番搜索后，cross-build映入了我们眼帘。在看完：
+在yocto的方案受挫后，我们发现，当前主要的问题在于如何将交叉编译生成的二进制文件打包成软件包，经过一番搜索后，cross-build映入了我们眼帘。在看完[这篇](https://wiki.ubuntu.com/CrossBuilding)、[这篇](https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossBuilding)和[这篇](https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossbuildingQuickStart)后，总结出一个结论：妈蛋交叉构建还是个坑啊，大家要构建最好把源码传到`launchpad`上啊，我们建议大家构建的时候用最新的工具链哟，也欢迎搭建帮忙一起测试sbuild和那些个坑爹的package 维护者挖的坑 （逃
 
-- [这篇](https://wiki.ubuntu.com/CrossBuilding)
-- [这篇](https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossBuilding)
-- [这篇](https://wiki.linaro.org/Platform/DevPlatform/CrossCompile/CrossbuildingQuickStart)
-
-等文后，总结出一个结论：妈蛋交叉构建还是个坑啊，大家要构建最好把源码传到`launchpad`上啊，我们建议大家构建的时候用最新的工具链哟，也欢迎搭建帮忙一起测试sbuild和那些个坑爹的package 维护者挖的坑 （逃
-
-不过第一篇文中，同时也表示业界在crossbuild的泥潭里正缓慢的前行，那么之前的ubuntu for arm版本又是如何构建出来的呢？？
+不过第一篇文中，同时也表示业界在`crossbuild`的泥潭里正缓慢的前行，那么之前的`ubuntu for arm`版本又是如何构建出来的呢？？下面来解答！
 
 ### crossBuild node
-这里就要请出[launchpad](https://launchpad.net/ubuntu)了，根据[这篇文章](http://comments.gmane.org/gmane.linux.embedded.yocto.general/15379)，可以得知，ubuntu基本是采用launchpad的分布式构建结点来制作软件包的，并且他们还是用的最慢的本地构建方法（也就是利用`qemu-static-user`软件包，在amd64的虚拟机上构建arm环境，然后用arm架构的工具构建软件包），事实上，launchpad的[这篇文章]也是这么说的(https://help.launchpad.net/Packaging/PPA)。
+这里就要请出[launchpad](https://launchpad.net/ubuntu)了，根据[这篇文章](http://comments.gmane.org/gmane.linux.embedded.yocto.general/15379)，可以得知，ubuntu基本是采用launchpad的分布式构建节点来制作软件包的，并且他们还是用的最慢的本地构建方法（也就是利用`qemu`，在`x86_64`的虚拟机上模拟`arm`环境，然后用arm架构的工具构建软件包），事实上，launchpad的[这篇文章](https://help.launchpad.net/Packaging/PPA)也是这么说的。
 
 既然如此，那我们何不自己搞一发本地构建？
 
-于是跟随者这篇[guide](https://wiki.ubuntu.com/SimpleSbuild) 我们搭建了一个 host,build,target都是armhf的chroot环境（前面的教程搭建的是基于amd64的sbuild chroot，只需要在mk-sbuild和sbuild的时候，将--arch=armhf加入命令行即可），然后就可以轻松的在amd64下构建arm软件包了
+于是跟随着这篇[guide](https://wiki.ubuntu.com/SimpleSbuild) 我们搭建了一个 host,build,target都是armhf的chroot环境（前面的教程搭建的是基于amd64的sbuild chroot，只需要在mk-sbuild和sbuild的时候，将--arch=armhf加入命令行即可），然后就可以轻松的在amd64下构建arm软件包了
 
 # buildd
 ### 问题

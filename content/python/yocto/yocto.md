@@ -14,11 +14,11 @@ Date: 2015-03-11 19:30
 #__file__ = 'bitbake/lib/bb/cooker.py'
 
 def server_main(cooker, func, *args):
-	cooker.pre_serve()
-	#something else
-         ret = func(*args)
-	cooker.post_serve()
-	return ret
+    cooker.pre_serve()
+    #something else
+    ret = func(*args)
+    cooker.post_serve()
+    return ret
 ```
 
 而这里的`func`，即是上面传进来的`bb.server.ProcessServer.main`，因此调用`server_main()`实际上是调用了`ProcessServer`类的`main()`函数
