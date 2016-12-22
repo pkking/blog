@@ -54,3 +54,9 @@ TAG_CLOUD_MAX_ITEMS = 200
 
 # Uncomment following line if you want document-relative URLs when developing
 RELATIVE_URLS = True
+
+# configuration for flex
+DEFAULT_LANG = 'cn'
+OG_LOCALE = 'zh_CN'
+LOCALE = 'zh_CN'
+PYGMENTS_STYLE = 'monokai'

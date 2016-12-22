@@ -1,4 +1,6 @@
 output/
+themes
+*.pyc
 __pycache__
 cache/
 .gitignore
