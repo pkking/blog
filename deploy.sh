@@ -37,7 +37,7 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
 
     # Go into directory and copy data we're interested in to that directory
     cd built_website
-    rsync -rv --exclude=.git  ../$PELICAN_OUTPUT_FOLDER/* .
+    rsync -artv --exclude=.git  ../$PELICAN_OUTPUT_FOLDER/ .
     if [ $? -ne 0 ];then
 	    echo "fail to sync $PELICAN_OUTPUT_FOLDER content"
 	    exit 1

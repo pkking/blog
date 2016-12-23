@@ -57,6 +57,4 @@ RELATIVE_URLS = True
 
 # configuration for flex
 DEFAULT_LANG = 'cn'
-OG_LOCALE = 'zh_CN'
-LOCALE = 'zh_CN'
 PYGMENTS_STYLE = 'monokai'
