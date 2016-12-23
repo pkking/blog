@@ -56,5 +56,4 @@ TAG_CLOUD_MAX_ITEMS = 200
 RELATIVE_URLS = True
 
 # configuration for flex
-DEFAULT_LANG = 'cn'
 PYGMENTS_STYLE = 'monokai'
