@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 AUTHOR = u'lichaoran'
 SITENAME = u'WAAAGH!'
 SITEURL = 'https://pkking.github.io'
+STATIC_PATHS = ['images']
+SITELOGO = '/images/waaagh.jpeg'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 PATH = 'content/'
 TIMEZONE = 'Asia/Shanghai'
@@ -13,7 +15,7 @@ OUTPUT_PATH = 'pkking/'
 ARTICLE_URL = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/'
 ARTICLE_SAVE_AS = 'posts/{date:%Y}/{date:%b}/{date:%d}/{slug}/index.html'
 #enable search
-USE_FOLDER_AS_CATEGORY = True 
+USE_FOLDER_AS_CATEGORY = True
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
 DEFAULT_DATE = 'fs'
@@ -53,7 +55,7 @@ TAG_CLOUD_STEPS = 4
 TAG_CLOUD_MAX_ITEMS = 200
 
 # Uncomment following line if you want document-relative URLs when developing
-RELATIVE_URLS = True
+#RELATIVE_URLS = True
 
 # configuration for flex
 PYGMENTS_STYLE = 'monokai'

@@ -59,7 +59,7 @@ def main(self):
 self.cooker.configuration.server_register_idlecallback(self.cooker.runCommands, self.cooker)
 ```
 
-	这段代码注册，可以看到，注册的函数为`bb.cooker.runCommands`，然后该函数调用这个注册的函数，如果未找到注册函数，则调用`select.select()`等待0.1秒后返回。
+这段代码注册，可以看到，注册的函数为`bb.cooker.runCommands`，然后该函数调用这个注册的函数，如果未找到注册函数，则调用`select.select()`等待0.1秒后返回。
 
 - `bb.cooker.runCommands`:该函数就是被注册的idle函数，他会被`server`主循环周期的调用，而该函数的实际内容，则是调用`bb.command.Command.runAsyncCommand`来执行一个已经就绪的异步命令
 - `bb.command.Command.runAsyncCommand`:该函数会判断当前cooker从状态，而分别调用`updateCache()`函数或者调用`command`对象的`currentAsyncCommand`成员函数，这个函数会在多种情况下被赋值为某个函数对象和其参数组成的元组`(command, options)`，当该函数被调用时，则会执行在`currentAsyncCommand`注册的函数，而`updateCache()`则会为启动其他的任务，例如`parse`
@@ -91,7 +91,8 @@ self.parser = CookerParser(self, filelist, masked)
         params.updateToServer(server)
         cmdline = params.parseActions()
         if not cmdline:
-            print("Nothing to do.  Use 'bitbake world' to build everything, or run 'bitbake --help' for usage information.")
+            print("Nothing to do.  Use 'bitbake world' to build everything, or
+             run 'bitbake --help' for usage information.")
             return 1
         if 'msg' in cmdline and cmdline['msg']:
             logger.error(cmdline['msg'])
@@ -147,7 +148,8 @@ def buildTargets(self, targets, task):
             return False
 
         if not retval:
-            bb.event.fire(bb.event.BuildCompleted(len(rq.rqdata.runq_fnid), buildname, targets, failures), self.data)
+            bb.event.fire(bb.event.BuildCompleted(len(rq.rqdata.runq_fnid), 
+                buildname, targets, failures), self.data)
             self.command.finishAsyncCommand(msg)
             return False
         if retval is True:
