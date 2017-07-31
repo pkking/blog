@@ -15,10 +15,10 @@ Date: 2017-05-11 19:00
 ## runc 在容器引擎中的位置
 docker为了兼容`OCI runtime spec`，在1.11版本后，将runc与`docker daemon`独立开来，作为实际的管理、操作容器的底层组件。
 
-下图就是runc出现前后，docker架构的变化</br>
+下图就是runc出现前后，docker架构的变化。</br>
 ![runc-in-docker-engine-process](/images/rkt-vs-docker-process-model.png)
 
-如下图所示，runc在容器引擎中，负责容器生命周期的管理和配置；由于runc本身已经具备了容器基本的管理能力，因而docker，rkt等应用，则更加关注于对容器的网络管理，编排等领域
+如下图所示，`runc`在容器引擎中，仅负责容器生命周期的管理和配置（在docker中，受`containerd`调用）；由于runc本身已经具备了容器基本的管理能力，因而docker，rkt等则能更加关注于对容器的网络管理，编排等领域。</br>
 ![runc-in-docker-arch](/images/runc-in-docker.png)
 
 ## runc 的意义
