@@ -122,3 +122,6 @@ func longestPalindrome(s string) string {
     return s[(mxpos+1-maxlen)/2:(mxpos-1+maxlen)/2]
 }
 ```
+
+## 参考资料
+- [http://www.61mon.com/index.php/archives/181/](http://www.61mon.com/index.php/archives/181/)
