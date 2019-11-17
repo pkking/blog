@@ -593,10 +593,10 @@ comments:
 
 # Disqus
 disqus:
-  enable: false
-  shortname:
+  enable: true
+  shortname: lcrpkking
   count: true
-  lazyload: false
+  lazyload: true
   #post_meta_order: 0
 
 # DisqusJS
