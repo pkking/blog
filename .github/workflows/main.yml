@@ -1,13 +1,12 @@
 name: Main workflow
 
 on:
-push:
+  push:
     branches:
     - hexo
 
 jobs:
-build:
-
+  build:
     runs-on: ubuntu-latest
 
     steps:
