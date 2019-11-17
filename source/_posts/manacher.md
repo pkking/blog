@@ -1,7 +1,12 @@
-Title: Manacher 算法求最长回文子串
-Tags: algrithm, manacher, palindromic, leetcode
-Date: 2017-07-31 19:58
-
+---
+title: Manacher 算法求最长回文子串
+tags: 
+- algrithm
+- manacher
+- palindromic
+- leetcode
+date: 2017-07-31 19:58
+---
 # 背景
 本文来源于`leetcode`上的一道求最长回文子串的[中级算法题](https://leetcode.com/problems/longest-palindromic-substring)
 # 先来个思路

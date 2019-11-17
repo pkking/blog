@@ -1,7 +1,12 @@
-Title:利用pelican和gitcafe搭建博客
-Tags:python,pelican,gitcafe,博客
-Date: 2015-02-18 19:30
-
+---
+title: 利用pelican和gitcafe搭建博客
+tags:
+- python
+- pelican
+- gitcafe
+- 博客
+date: 2015-02-18 19:30
+---
 ##介绍
 pelican是基于python的静态web站点生成器，由python编写
 目前最火热的静态站点利器jekyll则由ruby编写，出于对python的爱，我于是选择用pelican

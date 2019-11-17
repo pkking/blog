@@ -1,7 +1,7 @@
-output/
-*.pyc
-__pycache__
-cache/
-.gitignore
-pkking/
-.env
+.DS_Store
+Thumbs.db
+db.json
+*.log
+node_modules/
+public/
+.deploy*/

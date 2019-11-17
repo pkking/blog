@@ -1,7 +1,10 @@
-Title:Yocto源码分析
-Tags:python,Yocto
-Date: 2015-03-11 19:30
-
+---
+title: Yocto源码分析
+date: 2015-03-11 19:30
+tags:
+- python
+- Yocto
+---
 ## server如何运作
 
 在`bb/server/process.py`中，定义了当Yocto采用多进程`B/S`架构时，`server`进程的启动方式：

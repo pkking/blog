@@ -1,6 +1,12 @@
-Title: 关于在amd64架构下构建arm架构deb包的问题
-Tags: ubuntu,sbuild,arm,crossBuild
-Date: 2015-05-12 19:37
+---
+title: 关于在amd64架构下构建arm架构deb包的问题
+tags: 
+- ubuntu
+- sbuild
+- arm
+- crossBuild
+date: 2015-05-12 19:37
+---
 
 # poky & yocto
 最近项目组在准备开发基于 `arm`的版本，于是涉及到了交叉编译和交叉构建，前者很简单，只需要安装相应的arm-gcc即可。

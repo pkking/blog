@@ -1,7 +1,14 @@
-Title: runc 源码分析-1 概述
-Tags: container, oci, rkt, docker, k8s, golang
-Date: 2017-05-11 19:00
-
+---
+title: runc 源码分析-1 概述
+tags: 
+- container
+- oci
+- rkt
+- docker
+- k8s
+- golang
+date: 2017-05-11 19:00
+---
 ## runc 是什么
 最近在协助其他部门开发基于Android的容器方案，有机会深入接触了下`kernel`，`docker`等项目，发现容器的现状比起我14年刚毕业时，已经大不一样了
 
