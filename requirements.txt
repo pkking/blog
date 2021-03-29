@@ -10,7 +10,7 @@ MarkupSafe==1.0
 msgpack-python==0.4.7
 packaging==16.8
 pelican==3.7.1
-Pygments==2.2.0
+Pygments==2.7.4
 pyparsing==2.2.0
 python-dateutil==2.6.0
 pytz==2017.2
