@@ -9,15 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Use Node.js 10.x
-      uses: actions/setup-node@v1
+    - uses: actions/checkout@v3
+    - name: Use Node.js latest
+      uses: actions/setup-node@v3
       with:
-        node-version: '10.x'
+        node-version: 'latest'
     - name: prepare build env
       env:
         GH_ACTION_DEPLOY_KEY: ${{secrets.GH_ACTION_DEPLOY_KEY}}
-        NEXT_VERSION: v7.5.0
       run: |
         mkdir -p ~/.ssh/
         echo "$GH_ACTION_DEPLOY_KEY" > ~/.ssh/id_rsa
@@ -27,6 +26,8 @@ jobs:
         git config --global user.email 'pkwarcraft@gmail.com'
         npm i -g hexo-cli
         npm i
+        sed -i 's|https://mywaaagh_admin.gitee.io/blog/|https://pkking.github.io/' _config.yml
+        sed -i 's|root: /blog/|root: /|g' _config.yml
     - name: deploy to github
       run: |
         hexo generate && hexo deploy
